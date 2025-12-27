@@ -1,0 +1,305 @@
+use ratatui::{
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
+    text::{Line, Span, Text},
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    Frame,
+};
+
+use crate::app::{App, CurrentScreen, CurrentlyEditing, StatView};
+
+fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
+    let lines = vec![
+        Line::from(format!("{:+}", stat.modifier)),
+        Line::from(""),
+        Line::from(format!("{:^3}", stat.value)),
+    ];
+
+    //let stats_paragraph = Paragraph::new(stats_text)
+    //    .block(
+    //        Block::default()
+    //            .borders(Borders::ALL)
+    //            .title("Character Statistics"),
+    //    )
+    //    .style(Style::default().fg(Color::White));
+    let paragraph = Paragraph::new(lines)
+        .block(Block::default().borders(Borders::ALL).title(stat.name))
+        .alignment(Alignment::Center)
+        .style(Style::default().fg(Color::White));
+
+    frame.render_widget(paragraph, area);
+}
+
+pub fn ui(frame: &mut Frame, app: &App) {
+    let stats_sv = app.char_sheet.statistics.ability_scores();
+
+    /*let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(1), // info
+                Constraint::Min(1), // stats
+                Constraint::Length(3),
+            ])
+            .split(frame.area());
+    * */
+
+    let mut chunk_constraints = vec![Constraint::Length(14); stats_sv.len()];
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Min(5),
+            Constraint::Length(3),
+        ])
+        .split(frame.area());
+
+    let title_block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default());
+
+    // Create paragraph for base app
+    let title = Paragraph::new(Text::styled(
+        "D&D Character Sheet",
+        Style::default().fg(Color::Green),
+    ))
+    .block(title_block);
+    //.block(title_block.clone());
+
+    let title_chunk = chunks[0];
+    let info_chunk = chunks[1];
+    let footer_chunk = chunks[2];
+    frame.render_widget(title, title_chunk);
+
+    let stat_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Length(14); stats_sv.len()])
+        .split(info_chunk); // 👈 IMPORTANT
+
+    // Render the stats and modifiers here:
+    for (stat, chunk) in stats_sv.into_iter().zip(stat_chunks.iter()) {
+        render_stat(frame, stat, *chunk);
+    }
+
+    // // Create paragraph for Information data
+    // let information = Paragraph::new(Text::styled(
+    //     "Information",
+    //     Style::default().fg(Color::Green),
+    // ))
+    // .block(title_block.clone());
+
+    //// Define text for the sections
+    //let information_text = vec![
+    //    Text::raw(format!(
+    //        "Character Name: {}\n",
+    //        app.char_sheet.information.character_name
+    //    )),
+    //    Text::raw(format!("Class: {}\n", app.char_sheet.information.class)),
+    //    Text::raw(format!("Level: {}\n", app.char_sheet.information.level)),
+    //    Text::raw(format!(
+    //        "Background: {}\n",
+    //        app.char_sheet.information.background
+    //    )),
+    //    Text::raw(format!(
+    //        "Player Name: {}\n",
+    //        app.char_sheet.information.player_name
+    //    )),
+    //    Text::raw(format!("Race: {}\n", app.char_sheet.information.race)),
+    //    Text::raw(format!(
+    //        "Alignment: {}\n",
+    //        app.char_sheet.information.alignment
+    //    )),
+    //    Text::raw(format!(
+    //        "Experience: {}\n",
+    //        app.char_sheet.information.experience
+    //    )),
+    //];
+
+    //// Define text for each statistic
+    //let stats = vec![
+    //    ("STRENGTH", app.char_sheet.statistics.strength),
+    //    ("DEXTERITY", app.char_sheet.statistics.dexterity),
+    //    ("CONSTITUTION", app.char_sheet.statistics.constitution),
+    //    ("INTELLIGENCE", app.char_sheet.statistics.intelligence),
+    //    ("WISDOM", app.char_sheet.statistics.wisdom),
+    //    ("CHARISMA", app.char_sheet.statistics.charisma),
+    //];
+
+    //// Format the statistics into text
+    //let mut lines = vec![];
+    //for (stat_name, stat_value) in stats {
+    //    let modifier = calculate_modifier(stat_value);
+    //    lines.extend([
+    //        Line::from(format!("{}: {}", stat_name, modifier)),
+    //        Line::from("________"),
+    //        Line::from("|        |"),
+    //        Line::from(format!("| {:^6} |", stat_value)),
+    //        Line::from("----------"),
+    //        Line::from(""), // spacer line between stats
+    //    ]);
+    //}
+
+    //// Render the statistics section
+    //let stats_text = Text::from(lines);
+    //let stats_paragraph = Paragraph::new(stats_text)
+    //    .block(
+    //        Block::default()
+    //            .borders(Borders::ALL)
+    //            .title("Character Statistics"),
+    //    )
+    //    .style(Style::default().fg(Color::White));
+
+    ////// Render information section
+    ////let info_paragraph = Paragraph::new(information_text)
+    ////    .block(
+    ////        Block::default()
+    ////            .borders(Borders::ALL)
+    ////            .title("Character Information"),
+    ////    )
+    ////    .style(Style::default().fg(Color::Yellow));
+
+    ////frame.render_widget(info_paragraph, info_chunk);
+    //frame.render_widget(stats_paragraph, stats_chunk);
+
+    /*
+     * Here, we will create a Vec of Span which will be converted later into
+     * a single line by the Paragraph. (A Span is different from a Line,
+     * because a Span indicates a section of Text with a style applied,
+     * and doesn’t end with a newline)
+     */
+    let current_navigation_text = vec![
+        // The first half of the text
+        match app.current_screen {
+            CurrentScreen::Main => Span::styled("View Mode", Style::default().fg(Color::Green)),
+            CurrentScreen::Editing => {
+                Span::styled("Editing Mode", Style::default().fg(Color::Yellow))
+            }
+            CurrentScreen::Exiting => Span::styled("Exiting", Style::default().fg(Color::LightRed)),
+        }
+        .to_owned(),
+        // A white divider bar to separate the two sections
+        Span::styled(" | ", Style::default().fg(Color::White)),
+        // The final section of the text, with hints on what the user is editing
+        {
+            if let Some(editing) = &app.currently_editing {
+                match editing {
+                    CurrentlyEditing::Key => {
+                        Span::styled("Editing Json Key", Style::default().fg(Color::Green))
+                    }
+                    CurrentlyEditing::Value => {
+                        Span::styled("Editing Json Value", Style::default().fg(Color::LightGreen))
+                    }
+                }
+            } else {
+                Span::styled("Not Editing Anything", Style::default().fg(Color::DarkGray))
+            }
+        },
+    ];
+
+    let mode_footer = Paragraph::new(Line::from(current_navigation_text))
+        .block(Block::default().borders(Borders::ALL));
+
+    let current_keys_hint = {
+        match app.current_screen {
+            CurrentScreen::Main => Span::styled(
+                "(q) to quit / (e) to make new pair",
+                Style::default().fg(Color::Red),
+            ),
+            CurrentScreen::Editing => Span::styled(
+                "(ESC) to cancel/(Tab) to switch boxes/enter to complete",
+                Style::default().fg(Color::Red),
+            ),
+            CurrentScreen::Exiting => Span::styled(
+                "(q) to quit / (e) to make new pair",
+                Style::default().fg(Color::Red),
+            ),
+        }
+    };
+
+    let key_notes_footer =
+        Paragraph::new(Line::from(current_keys_hint)).block(Block::default().borders(Borders::ALL));
+
+    let footer_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(footer_chunk);
+
+    frame.render_widget(mode_footer, footer_chunks[0]);
+    frame.render_widget(key_notes_footer, footer_chunks[1]);
+
+    if let Some(editing) = &app.currently_editing {
+        let popup_block = Block::default()
+            .title("Enter a new key-value pair")
+            .borders(Borders::NONE)
+            .style(Style::default().bg(Color::DarkGray));
+
+        let area = centered_rect(60, 25, frame.area());
+        frame.render_widget(popup_block, area);
+
+        let popup_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .margin(1)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(area);
+
+        let mut key_block = Block::default().title("Key").borders(Borders::ALL);
+        let mut value_block = Block::default().title("Value").borders(Borders::ALL);
+
+        let active_style = Style::default().bg(Color::LightYellow).fg(Color::Black);
+
+        match editing {
+            CurrentlyEditing::Key => key_block = key_block.style(active_style),
+            CurrentlyEditing::Value => value_block = value_block.style(active_style),
+        };
+
+        let key_text = Paragraph::new(app.key_input.clone()).block(key_block);
+        frame.render_widget(key_text, popup_chunks[0]);
+
+        let value_text = Paragraph::new(app.value_input.clone()).block(value_block);
+        frame.render_widget(value_text, popup_chunks[1]);
+    }
+
+    if let CurrentScreen::Exiting = app.current_screen {
+        frame.render_widget(Clear, frame.area()); //this clears the entire screen and anything already drawn
+        let popup_block = Block::default()
+            .title("Y/N")
+            .borders(Borders::NONE)
+            .style(Style::default().bg(Color::DarkGray));
+
+        let exit_text = Text::styled(
+            "Would you like to output the buffer as json? (y/n)",
+            Style::default().fg(Color::Red),
+        );
+        // the `trim: false` will stop the text from being cut off when over the edge of the block
+        let exit_paragraph = Paragraph::new(exit_text)
+            .block(popup_block)
+            .wrap(Wrap { trim: false });
+
+        let area = centered_rect(60, 25, frame.area());
+        frame.render_widget(exit_paragraph, area);
+    }
+}
+
+/// helper function to create a centered rect using up certain percentage of the available rect `r`
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    // Cut the given rectangle into three vertical pieces
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    // Then cut the middle vertical piece into three width-wise pieces
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1] // Return the middle chunk
+}
