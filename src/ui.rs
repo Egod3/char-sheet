@@ -6,7 +6,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, CurrentScreen, CurrentlyEditing, StatView};
+use crate::app::{App, CurrentScreen, CurrentlyEditing, SavingThrowView, StatView};
 
 fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
     let lines = vec![
@@ -30,28 +30,34 @@ fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
     frame.render_widget(paragraph, area);
 }
 
+fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect) {
+    let symbol = if st.proficient { "●" } else { "○" };
+
+    let value_style = if st.value >= 0 {
+        Style::default().fg(Color::Green)
+    } else {
+        Style::default().fg(Color::Red)
+    };
+
+    let line = Line::from(vec![
+        Span::raw(format!("{} ", symbol)),
+        Span::raw(format!("{:<3} ", st.name)),
+        Span::styled(format!("{:+}", st.value), value_style),
+    ]);
+
+    frame.render_widget(Paragraph::new(line), area);
+}
+
 pub fn ui(frame: &mut Frame, app: &App) {
-    let stats_sv = app.char_sheet.statistics.ability_scores();
-
-    /*let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(3),
-                Constraint::Min(1), // info
-                Constraint::Min(1), // stats
-                Constraint::Length(3),
-            ])
-            .split(frame.area());
-    * */
-
-    let mut chunk_constraints = vec![Constraint::Length(14); stats_sv.len()];
-
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),
-            Constraint::Min(5),
-            Constraint::Length(3),
+            Constraint::Length(3), // Title Header
+            Constraint::Max(10),   // info
+            Constraint::Max(13),   // statistics, saving_throws & skills
+            //Constraint::Min(5),    // prof and language
+            Constraint::Min(5),    // health
+            Constraint::Length(3), // Footer
         ])
         .split(frame.area());
 
@@ -64,103 +70,102 @@ pub fn ui(frame: &mut Frame, app: &App) {
         "D&D Character Sheet",
         Style::default().fg(Color::Green),
     ))
-    .block(title_block);
-    //.block(title_block.clone());
+    .block(title_block.clone());
 
     let title_chunk = chunks[0];
     let info_chunk = chunks[1];
-    let footer_chunk = chunks[2];
+    let stats_chunk = chunks[2];
+    let footer_chunk = chunks[chunks.len() - 1];
     frame.render_widget(title, title_chunk);
 
-    let stat_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(vec![Constraint::Length(14); stats_sv.len()])
-        .split(info_chunk); // 👈 IMPORTANT
+    let info_paragraph = Paragraph::new(app.char_sheet.information.get_info_text())
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Character Information"),
+        )
+        .style(Style::default().fg(Color::Green));
+    frame.render_widget(info_paragraph, info_chunk);
 
-    // Render the stats and modifiers here:
-    for (stat, chunk) in stats_sv.into_iter().zip(stat_chunks.iter()) {
+    let stats_blk = Block::default().borders(Borders::ALL).title("Abilities");
+    frame.render_widget(stats_blk.clone(), stats_chunk);
+    let inner_stats_frame = stats_blk.inner(stats_chunk);
+
+    let stats_sv = app.char_sheet.statistics.ability_scores();
+    // Split the area into 2; left side: statistics right side: saving throws
+    let stats_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Min(0),     // Statistics grid
+            Constraint::Length(22), // Savings throw box
+        ])
+        .split(inner_stats_frame);
+
+    let stat_box_height = 7;
+    let stats_rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Min(0),
+            Constraint::Length(stat_box_height),
+            Constraint::Length(stat_box_height),
+            Constraint::Min(0),
+        ])
+        .split(stats_chunks[0]);
+
+    let stats_row1 = stats_rows[1];
+    let stats_row2 = stats_rows[2];
+
+    let stat_width = 12;
+
+    let row1_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(stat_width),
+            Constraint::Length(stat_width),
+            Constraint::Length(stat_width),
+        ])
+        .split(stats_row1);
+
+    let row2_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(stat_width),
+            Constraint::Length(stat_width),
+            Constraint::Length(stat_width),
+        ])
+        .split(stats_row2);
+
+    // Render the stats 3 per row and modifiers here:
+    for (stat, chunk) in stats_sv.into_iter().take(3).zip(row1_chunks.iter()) {
         render_stat(frame, stat, *chunk);
     }
 
-    // // Create paragraph for Information data
-    // let information = Paragraph::new(Text::styled(
-    //     "Information",
-    //     Style::default().fg(Color::Green),
-    // ))
-    // .block(title_block.clone());
+    // Render the stats 3 per row and modifiers here:
+    for (stat, chunk) in stats_sv.into_iter().skip(3).zip(row2_chunks.iter()) {
+        render_stat(frame, stat, *chunk);
+    }
 
-    //// Define text for the sections
-    //let information_text = vec![
-    //    Text::raw(format!(
-    //        "Character Name: {}\n",
-    //        app.char_sheet.information.character_name
-    //    )),
-    //    Text::raw(format!("Class: {}\n", app.char_sheet.information.class)),
-    //    Text::raw(format!("Level: {}\n", app.char_sheet.information.level)),
-    //    Text::raw(format!(
-    //        "Background: {}\n",
-    //        app.char_sheet.information.background
-    //    )),
-    //    Text::raw(format!(
-    //        "Player Name: {}\n",
-    //        app.char_sheet.information.player_name
-    //    )),
-    //    Text::raw(format!("Race: {}\n", app.char_sheet.information.race)),
-    //    Text::raw(format!(
-    //        "Alignment: {}\n",
-    //        app.char_sheet.information.alignment
-    //    )),
-    //    Text::raw(format!(
-    //        "Experience: {}\n",
-    //        app.char_sheet.information.experience
-    //    )),
-    //];
+    let saving_throws = app
+        .char_sheet
+        .saving_throws
+        .saving_throw_views(&app.char_sheet.statistics);
 
-    //// Define text for each statistic
-    //let stats = vec![
-    //    ("STRENGTH", app.char_sheet.statistics.strength),
-    //    ("DEXTERITY", app.char_sheet.statistics.dexterity),
-    //    ("CONSTITUTION", app.char_sheet.statistics.constitution),
-    //    ("INTELLIGENCE", app.char_sheet.statistics.intelligence),
-    //    ("WISDOM", app.char_sheet.statistics.wisdom),
-    //    ("CHARISMA", app.char_sheet.statistics.charisma),
-    //];
+    let sav_thr_blk = Block::default()
+        .borders(Borders::ALL)
+        .title("Saving Throws");
 
-    //// Format the statistics into text
-    //let mut lines = vec![];
-    //for (stat_name, stat_value) in stats {
-    //    let modifier = calculate_modifier(stat_value);
-    //    lines.extend([
-    //        Line::from(format!("{}: {}", stat_name, modifier)),
-    //        Line::from("________"),
-    //        Line::from("|        |"),
-    //        Line::from(format!("| {:^6} |", stat_value)),
-    //        Line::from("----------"),
-    //        Line::from(""), // spacer line between stats
-    //    ]);
-    //}
+    let sav_thr_inner = sav_thr_blk.inner(stats_chunks[1]);
 
-    //// Render the statistics section
-    //let stats_text = Text::from(lines);
-    //let stats_paragraph = Paragraph::new(stats_text)
-    //    .block(
-    //        Block::default()
-    //            .borders(Borders::ALL)
-    //            .title("Character Statistics"),
-    //    )
-    //    .style(Style::default().fg(Color::White));
+    let svn_thr_rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Length(1); saving_throws.len()])
+        .split(sav_thr_inner);
 
-    ////// Render information section
-    ////let info_paragraph = Paragraph::new(information_text)
-    ////    .block(
-    ////        Block::default()
-    ////            .borders(Borders::ALL)
-    ////            .title("Character Information"),
-    ////    )
-    ////    .style(Style::default().fg(Color::Yellow));
+    frame.render_widget(sav_thr_blk, stats_chunks[1]);
 
-    ////frame.render_widget(info_paragraph, info_chunk);
-    //frame.render_widget(stats_paragraph, stats_chunk);
+    for (st, row) in saving_throws.into_iter().zip(svn_thr_rows.iter()) {
+        render_saving_throw(frame, st, *row);
+    }
 
     /*
      * Here, we will create a Vec of Span which will be converted later into

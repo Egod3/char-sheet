@@ -1,3 +1,4 @@
+use ratatui::text::Line;
 use serde::Deserialize;
 use serde_json;
 use std::collections::HashMap;
@@ -30,54 +31,6 @@ pub struct Statistics {
     pub inspiration: bool,
     pub proficiency_bonus: u8,
     pub passive_wisdom_perception: u8,
-}
-
-#[derive(Clone, Copy)]
-pub struct StatView {
-    pub name: &'static str,
-    pub value: u8,
-    pub modifier: i8,
-}
-
-fn ability_mod(stat: u8) -> i8 {
-    (stat as i8 - 10) / 2
-}
-
-impl Statistics {
-    pub fn ability_scores(&self) -> [StatView; 6] {
-        [
-            StatView {
-                name: "STR",
-                value: self.strength,
-                modifier: ability_mod(self.strength),
-            },
-            StatView {
-                name: "DEX",
-                value: self.dexterity,
-                modifier: ability_mod(self.dexterity),
-            },
-            StatView {
-                name: "CON",
-                value: self.constitution,
-                modifier: ability_mod(self.constitution),
-            },
-            StatView {
-                name: "INT",
-                value: self.intelligence,
-                modifier: ability_mod(self.intelligence),
-            },
-            StatView {
-                name: "WIS",
-                value: self.wisdom,
-                modifier: ability_mod(self.wisdom),
-            },
-            StatView {
-                name: "CHA",
-                value: self.charisma,
-                modifier: ability_mod(self.charisma),
-            },
-        ]
-    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -164,6 +117,140 @@ pub struct CharSheet {
     pub health: Health,
 }
 
+#[derive(Clone, Copy)]
+pub struct StatView {
+    pub name: &'static str,
+    pub value: u8,
+    pub modifier: i8,
+}
+
+fn ability_mod(stat: u8) -> i8 {
+    (stat as i8 - 10) / 2
+}
+
+impl Information {
+    pub fn get_info_text(&self) -> Vec<Line<'_>> {
+        // Define text for the Character Information sections
+        let information_text = vec![
+            Line::from(format!("Character Name: {}\n", self.character_name)),
+            Line::from(format!("Class: {}\n", self.class)),
+            Line::from(format!("Level: {}\n", self.level)),
+            Line::from(format!("Background: {}\n", self.background)),
+            Line::from(format!("Player Name: {}\n", self.player_name)),
+            Line::from(format!("Race: {}\n", self.race)),
+            Line::from(format!("Alignment: {}\n", self.alignment)),
+            Line::from(format!("Experience: {}\n", self.experience)),
+        ];
+        information_text
+    }
+}
+
+impl Statistics {
+    pub fn ability_scores(&self) -> [StatView; 6] {
+        [
+            StatView {
+                name: "STR",
+                value: self.strength,
+                modifier: ability_mod(self.strength),
+            },
+            StatView {
+                name: "DEX",
+                value: self.dexterity,
+                modifier: ability_mod(self.dexterity),
+            },
+            StatView {
+                name: "CON",
+                value: self.constitution,
+                modifier: ability_mod(self.constitution),
+            },
+            StatView {
+                name: "INT",
+                value: self.intelligence,
+                modifier: ability_mod(self.intelligence),
+            },
+            StatView {
+                name: "WIS",
+                value: self.wisdom,
+                modifier: ability_mod(self.wisdom),
+            },
+            StatView {
+                name: "CHA",
+                value: self.charisma,
+                modifier: ability_mod(self.charisma),
+            },
+        ]
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct SavingThrowView {
+    pub name: &'static str,
+    pub value: i8,
+    pub proficient: bool,
+}
+
+impl SavingThrows {
+    pub fn saving_throw_views(&self, stats: &Statistics) -> [SavingThrowView; 6] {
+        [
+            Self::saving_throw(
+                "STR",
+                stats.strength,
+                self.strength_proficent,
+                stats.proficiency_bonus,
+            ),
+            Self::saving_throw(
+                "DEX",
+                stats.dexterity,
+                self.dexterity_proficent,
+                stats.proficiency_bonus,
+            ),
+            Self::saving_throw(
+                "CON",
+                stats.constitution,
+                self.constitution_proficent,
+                stats.proficiency_bonus,
+            ),
+            Self::saving_throw(
+                "INT",
+                stats.intelligence,
+                self.intelligence_proficent,
+                stats.proficiency_bonus,
+            ),
+            Self::saving_throw(
+                "WIS",
+                stats.wisdom,
+                self.wisdom_proficent,
+                stats.proficiency_bonus,
+            ),
+            Self::saving_throw(
+                "CHA",
+                stats.charisma,
+                self.charisma_proficent,
+                stats.proficiency_bonus,
+            ),
+        ]
+    }
+
+    fn saving_throw(
+        name: &'static str,
+        score: u8,
+        proficient: bool,
+        prof_bonus: u8,
+    ) -> SavingThrowView {
+        let mut value = ability_mod(score);
+
+        if proficient {
+            value += prof_bonus as i8;
+        }
+
+        SavingThrowView {
+            name,
+            value,
+            proficient,
+        }
+    }
+}
+
 pub enum CurrentScreen {
     Main,
     Editing,
@@ -203,13 +290,6 @@ impl App {
         let mut buff = String::new();
         file.read_to_string(&mut buff).unwrap();
         let loaded_char_sheet: CharSheet = serde_json::from_str(&buff).unwrap();
-        // let information: Information = char_sheet.information;
-        // let statistics: Statistics = char_sheet.statistics;
-        // let saving_throws: SavingThrows = char_sheet.saving_throws;
-        // let skills: Skills = char_sheet.skills;
-        // let proficiencies_and_language: ProficienciesAndLanguage =
-        //     char_sheet.proficiencies_and_language;
-        // let health: Health = char_sheet.health;
         App {
             key_input: String::new(),
             value_input: String::new(),
