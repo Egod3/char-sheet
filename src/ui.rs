@@ -2,26 +2,15 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Clear, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
 };
 
-use crate::app::{App, CurrentScreen, CurrentlyEditing, SavingThrowView, StatView};
+use crate::app::{App, CurrentScreen, CurrentlyEditing, SavingThrowView, SkillsView, StatView};
 
 fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
-    let lines = vec![
-        Line::from(format!("{:+}", stat.modifier)),
-        Line::from(""),
-        Line::from(format!("{:^3}", stat.value)),
-    ];
+    let lines = vec![Line::from(format!("{:+} ({:})", stat.modifier, stat.value))];
 
-    //let stats_paragraph = Paragraph::new(stats_text)
-    //    .block(
-    //        Block::default()
-    //            .borders(Borders::ALL)
-    //            .title("Character Statistics"),
-    //    )
-    //    .style(Style::default().fg(Color::White));
     let paragraph = Paragraph::new(lines)
         .block(Block::default().borders(Borders::ALL).title(stat.name))
         .alignment(Alignment::Center)
@@ -46,6 +35,15 @@ fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect) {
     ]);
 
     frame.render_widget(Paragraph::new(line), area);
+}
+
+fn skill_to_list_item(skill: &SkillsView) -> ListItem<'static> {
+    ListItem::new(format!(
+        "{} {:<14} {:+}",
+        skill.sp.symbol(),
+        skill.name,
+        skill.value,
+    ))
 }
 
 pub fn ui(frame: &mut Frame, app: &App) {
@@ -97,15 +95,17 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Min(0),     // Statistics grid
-            Constraint::Length(22), // Savings throw box
+            Constraint::Length(16), // Savings throw box
+            Constraint::Length(58), // Skills box
         ])
         .split(inner_stats_frame);
 
-    let stat_box_height = 7;
+    let stat_box_height = 3;
     let stats_rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Min(0),
+            Constraint::Length(stat_box_height),
             Constraint::Length(stat_box_height),
             Constraint::Length(stat_box_height),
             Constraint::Min(0),
@@ -114,13 +114,13 @@ pub fn ui(frame: &mut Frame, app: &App) {
 
     let stats_row1 = stats_rows[1];
     let stats_row2 = stats_rows[2];
+    let stats_row3 = stats_rows[3];
 
     let stat_width = 12;
 
     let row1_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(stat_width),
             Constraint::Length(stat_width),
             Constraint::Length(stat_width),
         ])
@@ -131,17 +131,29 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .constraints([
             Constraint::Length(stat_width),
             Constraint::Length(stat_width),
-            Constraint::Length(stat_width),
         ])
         .split(stats_row2);
 
-    // Render the stats 3 per row and modifiers here:
-    for (stat, chunk) in stats_sv.into_iter().take(3).zip(row1_chunks.iter()) {
+    let row3_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(stat_width),
+            Constraint::Length(stat_width),
+        ])
+        .split(stats_row3);
+
+    // Render the stats 2 per row and modifiers here:
+    for (stat, chunk) in stats_sv.into_iter().take(2).zip(row1_chunks.iter()) {
         render_stat(frame, stat, *chunk);
     }
 
-    // Render the stats 3 per row and modifiers here:
-    for (stat, chunk) in stats_sv.into_iter().skip(3).zip(row2_chunks.iter()) {
+    // Render the stats 2 per row and modifiers here:
+    for (stat, chunk) in stats_sv.into_iter().skip(2).zip(row2_chunks.iter()) {
+        render_stat(frame, stat, *chunk);
+    }
+
+    // Render the stats 2 per row and modifiers here:
+    for (stat, chunk) in stats_sv.into_iter().skip(4).zip(row3_chunks.iter()) {
         render_stat(frame, stat, *chunk);
     }
 
@@ -158,7 +170,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
 
     let svn_thr_rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(1); saving_throws.len()])
+        .constraints(vec![Constraint::Max(8); saving_throws.len()])
         .split(sav_thr_inner);
 
     frame.render_widget(sav_thr_blk, stats_chunks[1]);
@@ -166,6 +178,38 @@ pub fn ui(frame: &mut Frame, app: &App) {
     for (st, row) in saving_throws.into_iter().zip(svn_thr_rows.iter()) {
         render_saving_throw(frame, st, *row);
     }
+
+    let skills_blk = Block::default().borders(Borders::ALL).title("Skills");
+
+    let skills_inner = skills_blk.inner(stats_chunks[2]);
+
+    frame.render_widget(&skills_blk, stats_chunks[2]);
+
+    // Get the skills_view array
+    let skills_views = app.char_sheet.skills.skills_views();
+    let skills_row_size = skills_views.len() / 2;
+    let skills_box_width = 28;
+    let skills_rows = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(skills_box_width),
+            Constraint::Length(skills_box_width),
+        ])
+        .split(skills_inner);
+
+    let skills_items_zero: Vec<ListItem> = skills_views
+        .iter()
+        .take(skills_row_size)
+        .map(skill_to_list_item)
+        .collect();
+    let skills_items_one: Vec<ListItem> = skills_views
+        .iter()
+        .skip(skills_row_size)
+        .map(skill_to_list_item)
+        .collect();
+
+    frame.render_widget(List::new(skills_items_zero), skills_rows[0]);
+    frame.render_widget(List::new(skills_items_one), skills_rows[1]);
 
     /*
      * Here, we will create a Vec of Span which will be converted later into

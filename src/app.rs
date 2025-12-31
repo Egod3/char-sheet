@@ -54,6 +54,7 @@ pub struct Skills {
     pub deception: String,
     pub history: String,
     pub insight: String,
+    pub intimidation: String,
     pub investigation: String,
     pub medicine: String,
     pub nature: String,
@@ -71,6 +72,7 @@ pub struct Skills {
     pub deception_skill: String,
     pub history_skill: String,
     pub insight_skill: String,
+    pub intimidation_skill: String,
     pub investigation_skill: String,
     pub medicine_skill: String,
     pub nature_skill: String,
@@ -247,6 +249,164 @@ impl SavingThrows {
             name,
             value,
             proficient,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct SkillsView {
+    pub name: &'static str,
+    pub value: i8,
+    pub sp: SkillProficiency,
+}
+
+impl Skills {
+    pub fn skills_views(&self) -> [SkillsView; 18] {
+        [
+            Self::skills(
+                "Acrobatics (Dex)",
+                self.acrobatics.clone(),
+                self.acrobatics_skill.clone(),
+            ),
+            Self::skills(
+                "Animal_handling (Wis)",
+                self.animal_handling.clone(),
+                self.animal_handling_skill.clone(),
+            ),
+            Self::skills(
+                "Arcana (Int)",
+                self.arcana.clone(),
+                self.arcana_skill.clone(),
+            ),
+            Self::skills(
+                "Athletics (Str)",
+                self.athletics.clone(),
+                self.athletics_skill.clone(),
+            ),
+            Self::skills(
+                "Deception (Dex)",
+                self.deception.clone(),
+                self.deception_skill.clone(),
+            ),
+            Self::skills(
+                "History (Int)",
+                self.history.clone(),
+                self.history_skill.clone(),
+            ),
+            Self::skills(
+                "Insight (Wis)",
+                self.insight.clone(),
+                self.insight_skill.clone(),
+            ),
+            Self::skills(
+                "Intimidation (Cha)",
+                self.intimidation.clone(),
+                self.intimidation_skill.clone(),
+            ),
+            Self::skills(
+                "Investigation (Int)",
+                self.investigation.clone(),
+                self.investigation_skill.clone(),
+            ),
+            Self::skills(
+                "Medicine (Wis)",
+                self.medicine.clone(),
+                self.medicine_skill.clone(),
+            ),
+            Self::skills(
+                "Nature (Int)",
+                self.nature.clone(),
+                self.nature_skill.clone(),
+            ),
+            Self::skills(
+                "Perception (Wis)",
+                self.perception.clone(),
+                self.perception_skill.clone(),
+            ),
+            Self::skills(
+                "Performance (Cha)",
+                self.performance.clone(),
+                self.performance_skill.clone(),
+            ),
+            Self::skills(
+                "Persuasion (Cha)",
+                self.persuasion.clone(),
+                self.persuasion_skill.clone(),
+            ),
+            Self::skills(
+                "Religion (Int)",
+                self.religion.clone(),
+                self.religion_skill.clone(),
+            ),
+            Self::skills(
+                "Slight_of_hand (Dex)",
+                self.slight_of_hand.clone(),
+                self.slight_of_hand_skill.clone(),
+            ),
+            Self::skills(
+                "Stealth (Dex)",
+                self.stealth.clone(),
+                self.stealth_skill.clone(),
+            ),
+            Self::skills(
+                "Survival (Wis)",
+                self.survival.clone(),
+                self.survival_skill.clone(),
+            ),
+        ]
+    }
+
+    fn skills(name: &'static str, score: String, proficient_str: String) -> SkillsView {
+        let value;
+        let mut sp: SkillProficiency = SkillProficiency::None;
+
+        if score == "" {
+            value = 0;
+        } else {
+            let value_opt = parse_string(&score);
+            match value_opt {
+                Some(val) => {
+                    value = val;
+                }
+                None => {
+                    value = 0;
+                }
+            }
+        }
+
+        if proficient_str == "proficient" {
+            sp = SkillProficiency::Proficient;
+        } else if proficient_str == "expertise" {
+            sp = SkillProficiency::Expertise;
+        }
+
+        SkillsView { name, value, sp }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum SkillProficiency {
+    None,
+    Proficient,
+    Expertise,
+}
+
+impl SkillProficiency {
+    pub fn symbol(self) -> &'static str {
+        match self {
+            SkillProficiency::None => "○",
+            SkillProficiency::Proficient => "●",
+            SkillProficiency::Expertise => "◎",
+        }
+    }
+}
+
+fn parse_string(s: &str) -> Option<i8> {
+    match s.parse::<i8>() {
+        Ok(num) => Some(num),
+        Err(e) => {
+            println!("Failed to parse \"{}\": {}", s, e);
+            None
         }
     }
 }
