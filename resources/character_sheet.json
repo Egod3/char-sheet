@@ -76,7 +76,7 @@
     "armor_class": 16,
     "initiative": "+2",
     "speed": 40,
-    "current_hp": 0,
+    "current_hp": 76,
     "maximum_hp": 76,
     "temporary_hp": 0,
     "hit_dice_type": "d6",
