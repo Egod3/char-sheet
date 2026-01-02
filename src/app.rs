@@ -1,4 +1,5 @@
 use ratatui::text::Line;
+use ratatui::widgets::ListItem;
 use serde::Deserialize;
 use serde_json;
 use std::collections::HashMap;
@@ -145,6 +146,19 @@ impl Information {
         ];
         information_text
     }
+
+    pub fn information_to_list_item(&self) -> Vec<ListItem<'static>> {
+        vec![
+            ListItem::new(format!("Char Name: {}", self.character_name)),
+            ListItem::new(format!("Class: {}", self.class)),
+            ListItem::new(format!("Level: {}", self.level)),
+            ListItem::new(format!("Background: {}", self.background)),
+            ListItem::new(format!("Player Name: {}", self.player_name)),
+            ListItem::new(format!("Race: {}", self.race)),
+            ListItem::new(format!("Alignment: {}", self.alignment)),
+            ListItem::new(format!("Experience: {}", self.experience)),
+        ]
+    }
 }
 
 impl Statistics {
@@ -269,7 +283,7 @@ impl Skills {
                 self.acrobatics_skill.clone(),
             ),
             Self::skills(
-                "Animal_handling (Wis)",
+                "Animal Handling (Wis)",
                 self.animal_handling.clone(),
                 self.animal_handling_skill.clone(),
             ),
@@ -339,7 +353,7 @@ impl Skills {
                 self.religion_skill.clone(),
             ),
             Self::skills(
-                "Slight_of_hand (Dex)",
+                "Slight of Hand (Dex)",
                 self.slight_of_hand.clone(),
                 self.slight_of_hand_skill.clone(),
             ),

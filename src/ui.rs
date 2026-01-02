@@ -51,10 +51,10 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3), // Title Header
-            Constraint::Max(10),   // info
-            Constraint::Max(13),   // statistics, saving_throws & skills
-            //Constraint::Min(5),    // prof and language
-            Constraint::Min(5),    // health
+            Constraint::Max(5),    // Information
+            Constraint::Max(13),   // Statistics, Saving_throws & Skills
+            Constraint::Min(5),    // Prof and Language
+            Constraint::Min(5),    // Health
             Constraint::Length(3), // Footer
         ])
         .split(frame.area());
@@ -76,22 +76,42 @@ pub fn ui(frame: &mut Frame, app: &App) {
     let footer_chunk = chunks[chunks.len() - 1];
     frame.render_widget(title, title_chunk);
 
-    let info_paragraph = Paragraph::new(app.char_sheet.information.get_info_text())
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Character Information"),
-        )
+    let info_blk = Block::default()
+        .borders(Borders::ALL)
+        .title("Character Information")
         .style(Style::default().fg(Color::Green));
-    frame.render_widget(info_paragraph, info_chunk);
+    frame.render_widget(info_blk.clone(), info_chunk);
+    let inner_info_frame = info_blk.inner(info_chunk);
+    let char_info_width = 40;
+    // Split the "Character info" area into 3 rows;
+    let char_info_rows = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(char_info_width + 10), // slot 0
+            Constraint::Length(char_info_width - 10), // slot 1
+            Constraint::Length(char_info_width - 10), // slot 2
+        ])
+        .split(inner_info_frame);
+    let info_list = app.char_sheet.information.information_to_list_item();
+    let char_info_row_len = 3;
+
+    let char_info_items_zero: Vec<ListItem> = info_list[0..char_info_row_len].to_vec();
+    let char_info_items_one: Vec<ListItem> =
+        info_list[char_info_row_len..char_info_row_len * 2].to_vec();
+    let end = 8;
+    let char_info_items_two: Vec<ListItem> = info_list[char_info_row_len * 2..end].to_vec();
+
+    frame.render_widget(List::new(char_info_items_zero), char_info_rows[0]);
+    frame.render_widget(List::new(char_info_items_one), char_info_rows[1]);
+    frame.render_widget(List::new(char_info_items_two), char_info_rows[2]);
 
     let stats_blk = Block::default().borders(Borders::ALL).title("Abilities");
     frame.render_widget(stats_blk.clone(), stats_chunk);
-    let inner_stats_frame = stats_blk.inner(stats_chunk);
-
     let stats_sv = app.char_sheet.statistics.ability_scores();
-    // Split the area into 2; left side: statistics right side: saving throws
-    let stats_chunks = Layout::default()
+    let inner_stats_frame = stats_blk.inner(stats_chunk);
+    // Split the "Abilities" area into 3;
+    // left side: statistics, middle: saving throws, right side: skills
+    let ability_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Min(0),     // Statistics grid
@@ -110,7 +130,7 @@ pub fn ui(frame: &mut Frame, app: &App) {
             Constraint::Length(stat_box_height),
             Constraint::Min(0),
         ])
-        .split(stats_chunks[0]);
+        .split(ability_chunks[0]);
 
     let stats_row1 = stats_rows[1];
     let stats_row2 = stats_rows[2];
@@ -166,14 +186,14 @@ pub fn ui(frame: &mut Frame, app: &App) {
         .borders(Borders::ALL)
         .title("Saving Throws");
 
-    let sav_thr_inner = sav_thr_blk.inner(stats_chunks[1]);
+    let sav_thr_inner = sav_thr_blk.inner(ability_chunks[1]);
 
     let svn_thr_rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Max(8); saving_throws.len()])
         .split(sav_thr_inner);
 
-    frame.render_widget(sav_thr_blk, stats_chunks[1]);
+    frame.render_widget(sav_thr_blk, ability_chunks[1]);
 
     for (st, row) in saving_throws.into_iter().zip(svn_thr_rows.iter()) {
         render_saving_throw(frame, st, *row);
@@ -181,9 +201,9 @@ pub fn ui(frame: &mut Frame, app: &App) {
 
     let skills_blk = Block::default().borders(Borders::ALL).title("Skills");
 
-    let skills_inner = skills_blk.inner(stats_chunks[2]);
+    let skills_inner = skills_blk.inner(ability_chunks[2]);
 
-    frame.render_widget(&skills_blk, stats_chunks[2]);
+    frame.render_widget(&skills_blk, ability_chunks[2]);
 
     // Get the skills_view array
     let skills_views = app.char_sheet.skills.skills_views();
@@ -210,6 +230,12 @@ pub fn ui(frame: &mut Frame, app: &App) {
 
     frame.render_widget(List::new(skills_items_zero), skills_rows[0]);
     frame.render_widget(List::new(skills_items_one), skills_rows[1]);
+
+    // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed
+    // I am thinking of having the death saves/death fails
+    // be hidden until the player goes to 0 HP then have that pop up.
+    // I need to think through the use cases and ensure we support
+    // the char dying and being revived.
 
     /*
      * Here, we will create a Vec of Span which will be converted later into

@@ -1,5 +1,3 @@
-// use serde_json;
-//use std::{error::Error, fs::File, io, io::Read, io::Result};
 use std::{error::Error, io};
 
 use ratatui::{
@@ -18,50 +16,6 @@ use crate::{
     app::{App, CurrentScreen, CurrentlyEditing},
     ui::ui,
 };
-
-//fn main() -> Result<()> {
-// println!("welcome to char-sheet");
-
-// // Exmple sheet that is based on DND 5e Cromwell Windscream a Path of the Giant Barbarian
-// let mut file = File::open("resources/character_sheet.json").unwrap();
-// let mut buff = String::new();
-// file.read_to_string(&mut buff).unwrap();
-// let char_sheet: CharSheet = serde_json::from_str(&buff).unwrap();
-// let information: Information = char_sheet.information;
-// let statistics: Statistics = char_sheet.statistics;
-// let saving_throws: SavingThrows = char_sheet.saving_throws;
-// let skills: Skills = char_sheet.skills;
-// let proficiencies_and_language: ProficienciesAndLanguage =
-//     char_sheet.proficiencies_and_language;
-// let health: Health = char_sheet.health;
-
-// println!("information.character_name: {}", information.character_name);
-// println!("information.class: {}", information.class);
-// println!("information.level: {}", information.level);
-// println!("information.background: {}", information.background);
-// println!("information.player_name: {}", information.player_name);
-// println!("information.race: {}", information.race);
-// println!("information.alignment: {}", information.alignment);
-// println!("information.experience: {}", information.experience);
-
-// println!("statistics.strength: {}", statistics.strength);
-
-// println!(
-//     "saving_throws.strength_proficent: {}",
-//     saving_throws.strength_proficent
-// );
-
-// println!("skills.acrobatics: {}", skills.acrobatics);
-
-// println!(
-//     "proficiencies_and_language.languages_known: {}",
-//     proficiencies_and_language.languages_known
-// );
-
-// println!("health.armor_class: {}", health.armor_class);
-
-// Ok(())
-// } # Original main()
 
 fn main() -> Result<(), Box<dyn Error>> {
     // setup terminal
