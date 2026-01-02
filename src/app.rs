@@ -131,21 +131,6 @@ fn ability_mod(stat: u8) -> i8 {
 }
 
 impl Information {
-    pub fn get_info_text(&self) -> Vec<Line<'_>> {
-        // Define text for the Character Information sections
-        let information_text = vec![
-            Line::from(format!("Character Name: {}\n", self.character_name)),
-            Line::from(format!("Class: {}\n", self.class)),
-            Line::from(format!("Level: {}\n", self.level)),
-            Line::from(format!("Background: {}\n", self.background)),
-            Line::from(format!("Player Name: {}\n", self.player_name)),
-            Line::from(format!("Race: {}\n", self.race)),
-            Line::from(format!("Alignment: {}\n", self.alignment)),
-            Line::from(format!("Experience: {}\n", self.experience)),
-        ];
-        information_text
-    }
-
     pub fn information_to_list_item(&self) -> Vec<ListItem<'static>> {
         vec![
             ListItem::new(format!("Char Name: {}", self.character_name)),
@@ -424,15 +409,31 @@ fn parse_string(s: &str) -> Option<i8> {
     }
 }
 
-pub enum CurrentScreen {
-    Main,
-    Editing,
-    Exiting,
+#[derive(Default)]
+pub struct ViewState {
+    pub health: HealthView,
+    // TODO: Move other View's into this structure
+    // stats_view, skills_view, etc
 }
 
-pub enum CurrentlyEditing {
-    Key,
-    Value,
+#[derive(Default)]
+pub enum Hover {
+    Minus,
+    Plus,
+    #[default]
+    None,
+}
+
+#[derive(Default)]
+pub struct HealthView {
+    pub minus_rect: Rect,
+    pub plus_rect: Rect,
+    pub hover: Hover,
+}
+
+pub enum CurrentScreen {
+    Main,
+    Exiting,
 }
 
 #[allow(dead_code)]
@@ -449,12 +450,6 @@ pub enum CurrEditInformation {
 }
 
 pub struct App {
-    pub key_input: String,              // the currently being edited json key.
-    pub value_input: String,            // the currently being edited json value.
-    pub pairs: HashMap<String, String>, // The representation of our key and value pairs with serde Serialize support
-
-    pub currently_editing: Option<CurrentlyEditing>, // the optional state containing which of the key or value pair the user is editing. It is an option, because when the user is not directly editing a key-value pair, this will be set to `None`.
-
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub char_sheet: CharSheet,
     pub json_file_name: String,

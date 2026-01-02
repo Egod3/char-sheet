@@ -1,9 +1,13 @@
+use ratatui::layout::Rect;
 use std::{error::Error, io};
 
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     crossterm::{
-        event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+        event::{
+            self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind,
+            MouseButton, MouseEventKind,
+        },
         execute,
         terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     },
@@ -13,7 +17,7 @@ use ratatui::{
 mod app;
 mod ui;
 use crate::{
-    app::{App, CurrentScreen, CurrentlyEditing},
+    app::{App, CurrentScreen, HealthView, Hover, ViewState},
     ui::ui,
 };
 
@@ -25,9 +29,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stderr);
     let mut terminal = Terminal::new(backend)?;
 
+    let mut view_state: ViewState = ViewState {
+        health: HealthView {
+            minus_rect: Rect::new(0, 0, 0, 0),
+            plus_rect: Rect::new(0, 0, 0, 0),
+            hover: Hover::None,
+        },
+    };
+
     // create app and run it
     let mut app = App::new("resources/character_sheet.json".to_string());
-    let res = run_app(&mut terminal, &mut app);
+    let res = run_app(&mut terminal, &mut app, &mut view_state);
 
     // restore terminal
     disable_raw_mode()?;
@@ -38,99 +50,82 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
     terminal.show_cursor()?;
 
-    if let Ok(do_print) = res {
-        if do_print {
-            app.print_json()?;
-        }
-    } else if let Err(err) = res {
+    if let Err(err) = res {
         println!("{err:?}");
     }
 
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
-    loop {
-        terminal.draw(|f| ui(f, app)).unwrap();
+fn rect_contains(rect: Rect, x: u16, y: u16) -> bool {
+    x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height
+}
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Release {
-                // Skip events that are not KeyEventKind::Press
-                continue;
-            }
-            match app.current_screen {
-                CurrentScreen::Main => match key.code {
-                    KeyCode::Char('e') => {
-                        app.current_screen = CurrentScreen::Editing;
-                        app.currently_editing = Some(CurrentlyEditing::Key);
-                    }
-                    KeyCode::Char('q') => {
-                        app.current_screen = CurrentScreen::Exiting;
-                    }
-                    _ => {}
-                },
-                CurrentScreen::Exiting => match key.code {
-                    KeyCode::Char('y') => {
-                        return Ok(true);
-                    }
-                    KeyCode::Char('n') | KeyCode::Char('q') => {
-                        return Ok(false);
-                    }
-                    _ => {}
-                },
-                CurrentScreen::Editing if key.kind == KeyEventKind::Press => {
-                    match key.code {
-                        KeyCode::Enter => {
-                            if let Some(editing) = &app.currently_editing {
-                                match editing {
-                                    CurrentlyEditing::Key => {
-                                        app.currently_editing = Some(CurrentlyEditing::Value);
-                                    }
-                                    CurrentlyEditing::Value => {
-                                        app.save_key_value();
-                                        app.current_screen = CurrentScreen::Main;
-                                    }
-                                }
-                            }
-                        }
-                        KeyCode::Backspace => {
-                            if let Some(editing) = &app.currently_editing {
-                                match editing {
-                                    CurrentlyEditing::Key => {
-                                        app.key_input.pop();
-                                    }
-                                    CurrentlyEditing::Value => {
-                                        app.value_input.pop();
-                                    }
-                                }
-                            }
-                        }
-                        KeyCode::Esc => {
-                            app.current_screen = CurrentScreen::Main;
-                            app.currently_editing = None;
-                        }
-                        KeyCode::Tab => {
-                            app.toggle_editing();
-                        }
-                        KeyCode::Char(value) => {
-                            if let Some(editing) = &app.currently_editing {
-                                match editing {
-                                    CurrentlyEditing::Key => {
-                                        app.key_input.push(value);
-                                    }
-                                    CurrentlyEditing::Value => {
-                                        app.value_input.push(value);
-                                    }
-                                }
-                            }
-                        }
-                        // END: character_editing
-                        _ => {}
-                    }
-                }
-                _ => {}
+enum Action {
+    Quit,
+    HpIncrease,
+    HpDecrease,
+    None,
+}
+
+fn handle_event(event: Event, view: &mut HealthView) -> Action {
+    match event {
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') => {
+            Action::Quit
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('+') => {
+            Action::HpIncrease
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('-') => {
+            Action::HpDecrease
+        }
+
+        Event::Mouse(mouse) if matches!(mouse.kind, MouseEventKind::Up(MouseButton::Left)) => {
+            if rect_contains(view.minus_rect, mouse.column, mouse.row) {
+                view.hover = Hover::Minus;
+                Action::HpDecrease
+            } else if rect_contains(view.plus_rect, mouse.column, mouse.row) {
+                view.hover = Hover::Plus;
+                Action::HpIncrease
+            } else {
+                view.hover = Hover::None;
+                Action::None
             }
         }
-        // END: event_poll
+        _ => Action::None,
+    }
+}
+
+fn run_app<B: Backend>(
+    terminal: &mut Terminal<B>,
+    app: &mut App,
+    view_state: &mut ViewState,
+) -> io::Result<bool> {
+    loop {
+        terminal.draw(|f| ui(f, app, view_state)).unwrap();
+        let timeout = std::time::Duration::from_millis(250);
+
+        if event::poll(timeout)? {
+            match handle_event(event::read()?, &mut view_state.health) {
+                Action::Quit => {
+                    app.current_screen = CurrentScreen::Exiting;
+                    break Ok(false);
+                }
+
+                Action::HpIncrease => {
+                    app.char_sheet.health.current_hp = (app.char_sheet.health.current_hp + 1)
+                        .min(app.char_sheet.health.maximum_hp);
+                }
+
+                Action::HpDecrease => {
+                    app.char_sheet.health.current_hp =
+                        (app.char_sheet.health.current_hp - 1).max(0);
+                }
+
+                Action::None => {}
+            }
+        }
     }
 }
