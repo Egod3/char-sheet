@@ -1,12 +1,10 @@
-use ratatui::text::Line;
+use ratatui::layout::Rect;
 use ratatui::widgets::ListItem;
-use serde::Deserialize;
-use serde_json;
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufWriter, Read, Write};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 pub struct Information {
     pub character_name: String,
@@ -19,7 +17,7 @@ pub struct Information {
     pub experience: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 // Modifiers will be calculated based on rules of the game
 pub struct Statistics {
@@ -34,7 +32,7 @@ pub struct Statistics {
     pub passive_wisdom_perception: u8,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 pub struct SavingThrows {
     pub strength_proficent: bool,
@@ -45,7 +43,7 @@ pub struct SavingThrows {
     pub charisma_proficent: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 pub struct Skills {
     pub acrobatics: String,
@@ -85,7 +83,7 @@ pub struct Skills {
     pub stealth_skill: String,
     pub survival_skill: String,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 pub struct ProficienciesAndLanguage {
     pub languages_known: String,
@@ -93,13 +91,14 @@ pub struct ProficienciesAndLanguage {
     pub weapon_proficiency: String,
     pub tools_proficiency: String,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 pub struct Health {
     pub armor_class: u8,
     pub initiative: String,
     pub speed: u8,
     pub current_hp: u8,
+    pub maximum_hp: u8,
     pub temporary_hp: u8,
     pub hit_dice_type: String,
     pub total_hit_dice: u8,
@@ -109,7 +108,7 @@ pub struct Health {
     pub death_save_failes: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 pub struct CharSheet {
     pub information: Information,
@@ -453,50 +452,37 @@ pub struct App {
     pub key_input: String,              // the currently being edited json key.
     pub value_input: String,            // the currently being edited json value.
     pub pairs: HashMap<String, String>, // The representation of our key and value pairs with serde Serialize support
-    pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
+
     pub currently_editing: Option<CurrentlyEditing>, // the optional state containing which of the key or value pair the user is editing. It is an option, because when the user is not directly editing a key-value pair, this will be set to `None`.
+
+    pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub char_sheet: CharSheet,
+    pub json_file_name: String,
 }
 
 impl App {
     pub fn new(json_file: String) -> App {
-        let mut file = File::open(json_file).unwrap();
+        let mut file = File::open(&json_file).unwrap();
         let mut buff = String::new();
         file.read_to_string(&mut buff).unwrap();
         let loaded_char_sheet: CharSheet = serde_json::from_str(&buff).unwrap();
         App {
-            key_input: String::new(),
-            value_input: String::new(),
-            pairs: HashMap::new(),
             current_screen: CurrentScreen::Main,
-            currently_editing: None,
             char_sheet: loaded_char_sheet,
+            json_file_name: json_file.clone(),
         }
     }
+}
 
-    pub fn save_key_value(&mut self) {
-        self.pairs
-            .insert(self.key_input.clone(), self.value_input.clone());
+impl Drop for App {
+    fn drop(&mut self) {
+        println!("Closing the file and writing it disk");
+        // Here you'd close a file, free memory, etc.
+        // 2. Create the output file
+        let file = File::create(self.json_file_name.clone()).unwrap();
+        let mut writer = BufWriter::new(file); // Use BufWriter for performance
+        let _ = serde_json::to_writer_pretty(&mut writer, &self.char_sheet);
 
-        self.key_input = String::new();
-        self.value_input = String::new();
-        self.currently_editing = None;
-    }
-
-    pub fn toggle_editing(&mut self) {
-        if let Some(edit_mode) = &self.currently_editing {
-            match edit_mode {
-                CurrentlyEditing::Key => self.currently_editing = Some(CurrentlyEditing::Value),
-                CurrentlyEditing::Value => self.currently_editing = Some(CurrentlyEditing::Key),
-            };
-        } else {
-            self.currently_editing = Some(CurrentlyEditing::Key);
-        }
-    }
-
-    pub fn print_json(&self) -> serde_json::Result<()> {
-        let output = serde_json::to_string(&self.pairs)?;
-        println!("{output}");
-        Ok(())
+        writer.flush().unwrap();
     }
 }
