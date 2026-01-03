@@ -24,8 +24,6 @@ fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
 }
 
 fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect) {
-    let symbol = if st.proficient { "●" } else { "○" };
-
     let value_style = if st.value >= 0 {
         Style::default().fg(Color::Green)
     } else {
@@ -33,7 +31,7 @@ fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect) {
     };
 
     let line = Line::from(vec![
-        Span::raw(format!("{} ", symbol)),
+        Span::raw(format!("{} ", st.symbol())),
         Span::raw(format!("{:<3} ", st.name)),
         Span::styled(format!("{:+}", st.value), value_style),
     ]);

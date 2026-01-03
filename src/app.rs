@@ -189,6 +189,16 @@ pub struct SavingThrowView {
     pub proficient: bool,
 }
 
+impl SavingThrowView {
+    pub fn symbol(&self) -> &'static str {
+        if !self.proficient {
+            "○"
+        } else {
+            "●"
+        }
+    }
+}
+
 impl SavingThrows {
     pub fn saving_throw_views(&self, stats: &Statistics) -> [SavingThrowView; 6] {
         [
@@ -382,7 +392,7 @@ impl Skills {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum SkillProficiency {
     None,
     Proficient,
