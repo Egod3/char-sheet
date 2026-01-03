@@ -505,3 +505,88 @@ impl Drop for App {
         writer.flush().unwrap();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hp_increase_caps_at_max() {
+        let mut h = Health {
+            armor_class: 0,
+            initiative: "+1".to_string(),
+            speed: 30,
+            current_hp: 9,
+            maximum_hp: 10,
+            temporary_hp: 0,
+            hit_dice_type: "d12".to_string(),
+            total_hit_dice: 6,
+            current_hit_dice: 6,
+            unconscious: false,
+            death_save_saves: "".to_string(),
+            death_save_fails: "".to_string(),
+        };
+        h.increase();
+        h.increase();
+        assert_eq!(h.current_hp, 10);
+    }
+
+    #[test]
+    fn hp_decrease_stops_at_zero() {
+        let mut h = Health {
+            armor_class: 0,
+            initiative: "+1".to_string(),
+            speed: 30,
+            current_hp: 1,
+            maximum_hp: 10,
+            temporary_hp: 0,
+            hit_dice_type: "d12".to_string(),
+            total_hit_dice: 6,
+            current_hit_dice: 6,
+            unconscious: false,
+            death_save_saves: "".to_string(),
+            death_save_fails: "".to_string(),
+        };
+        h.decrease();
+        h.decrease();
+        assert_eq!(h.current_hp, 0);
+    }
+
+    #[test]
+    fn skills_proficiency_symbol_none() {
+        let skill_prof: SkillProficiency = SkillProficiency::None;
+        assert_eq!(skill_prof.symbol(), "○");
+    }
+
+    #[test]
+    fn skills_proficiency_symbol_proficient() {
+        let skill_prof: SkillProficiency = SkillProficiency::Proficient;
+        assert_eq!(skill_prof.symbol(), "●");
+    }
+
+    #[test]
+    fn skills_proficiency_symbol_expertise() {
+        let skill_prof: SkillProficiency = SkillProficiency::Expertise;
+        assert_eq!(skill_prof.symbol(), "◎");
+    }
+
+    #[test]
+    fn saving_throw_view_symbol_none() {
+        let stv: SavingThrowView = SavingThrowView {
+            name: "test",
+            value: 1,
+            proficient: false,
+        };
+        assert_eq!(stv.symbol(), "○");
+    }
+
+    #[test]
+    fn saving_throw_view_symbol_proficient() {
+        let stv: SavingThrowView = SavingThrowView {
+            name: "test",
+            value: 1,
+            proficient: true,
+        };
+        assert_eq!(stv.symbol(), "●");
+    }
+}
