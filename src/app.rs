@@ -103,9 +103,9 @@ pub struct Health {
     pub hit_dice_type: String,
     pub total_hit_dice: u8,
     pub current_hit_dice: u8,
-    pub unconcicious: bool,
+    pub unconscious: bool,
     pub death_save_saves: String,
-    pub death_save_failes: String,
+    pub death_save_fails: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

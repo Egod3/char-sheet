@@ -40,7 +40,7 @@
     "investigation": "+1",
     "medicine": "+1",
     "nature": "+4",
-    "perception": "+1",
+    "perception": "+4",
     "performance": "+1",
     "persuasion": "+1",
     "religion": "+1",
@@ -58,7 +58,7 @@
     "investigation_skill": "",
     "medicine_skill": "",
     "nature_skill": "proficient",
-    "perception_skill": "",
+    "perception_skill": "proficient",
     "performance_skill": "",
     "persuasion_skill": "",
     "religion_skill": "",
@@ -82,8 +82,8 @@
     "hit_dice_type": "d6",
     "total_hit_dice": 6,
     "current_hit_dice": 6,
-    "unconcicious": false,
+    "unconscious": false,
     "death_save_saves": "0/3",
-    "death_save_failes": "0/3"
+    "death_save_fails": "0/3"
   }
 }
