@@ -409,6 +409,20 @@ fn parse_string(s: &str) -> Option<i8> {
     }
 }
 
+impl Health {
+    pub fn increase(&mut self) {
+        self.current_hp = (self.current_hp + 1).min(self.maximum_hp);
+    }
+
+    pub fn decrease(&mut self) {
+        if self.current_hp >= 1 {
+            self.current_hp = self.current_hp - 1;
+        } else {
+            self.current_hp = 0;
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct ViewState {
     pub health: HealthView,

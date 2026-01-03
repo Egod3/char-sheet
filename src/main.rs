@@ -115,16 +115,11 @@ fn run_app<B: Backend>(
                 }
 
                 Action::HpIncrease => {
-                    app.char_sheet.health.current_hp = (app.char_sheet.health.current_hp + 1)
-                        .min(app.char_sheet.health.maximum_hp);
+                    app.char_sheet.health.increase();
                 }
 
                 Action::HpDecrease => {
-                    if app.char_sheet.health.current_hp >= 1 {
-                        app.char_sheet.health.current_hp = app.char_sheet.health.current_hp - 1;
-                    } else {
-                        app.char_sheet.health.current_hp = 0;
-                    }
+                    app.char_sheet.health.decrease();
                 }
 
                 Action::None => {}
