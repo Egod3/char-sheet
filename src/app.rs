@@ -17,7 +17,7 @@ pub struct Information {
     pub experience: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[allow(dead_code)]
 // Modifiers will be calculated based on rules of the game
 pub struct Statistics {
@@ -126,10 +126,6 @@ pub struct StatView {
     pub modifier: i8,
 }
 
-fn ability_mod(stat: u8) -> i8 {
-    (stat as i8 - 10) / 2
-}
-
 impl Information {
     pub fn information_to_list_item(&self) -> Vec<ListItem<'static>> {
         vec![
@@ -146,37 +142,45 @@ impl Information {
 }
 
 impl Statistics {
+    pub fn ability_mod(&self, stat: u8) -> i8 {
+        let mut modifier: i8 = (stat as i8 - 10) / 2;
+        if stat < 10 && stat % 2 == 1 {
+            modifier -= 1;
+        }
+        modifier
+    }
+
     pub fn ability_scores(&self) -> [StatView; 6] {
         [
             StatView {
                 name: "STR",
                 value: self.strength,
-                modifier: ability_mod(self.strength),
+                modifier: self.ability_mod(self.strength),
             },
             StatView {
                 name: "DEX",
                 value: self.dexterity,
-                modifier: ability_mod(self.dexterity),
+                modifier: self.ability_mod(self.dexterity),
             },
             StatView {
                 name: "CON",
                 value: self.constitution,
-                modifier: ability_mod(self.constitution),
+                modifier: self.ability_mod(self.constitution),
             },
             StatView {
                 name: "INT",
                 value: self.intelligence,
-                modifier: ability_mod(self.intelligence),
+                modifier: self.ability_mod(self.intelligence),
             },
             StatView {
                 name: "WIS",
                 value: self.wisdom,
-                modifier: ability_mod(self.wisdom),
+                modifier: self.ability_mod(self.wisdom),
             },
             StatView {
                 name: "CHA",
                 value: self.charisma,
-                modifier: ability_mod(self.charisma),
+                modifier: self.ability_mod(self.charisma),
             },
         ]
     }
@@ -207,36 +211,42 @@ impl SavingThrows {
                 stats.strength,
                 self.strength_proficent,
                 stats.proficiency_bonus,
+                stats,
             ),
             Self::saving_throw(
                 "DEX",
                 stats.dexterity,
                 self.dexterity_proficent,
                 stats.proficiency_bonus,
+                stats,
             ),
             Self::saving_throw(
                 "CON",
                 stats.constitution,
                 self.constitution_proficent,
                 stats.proficiency_bonus,
+                stats,
             ),
             Self::saving_throw(
                 "INT",
                 stats.intelligence,
                 self.intelligence_proficent,
                 stats.proficiency_bonus,
+                stats,
             ),
             Self::saving_throw(
                 "WIS",
                 stats.wisdom,
                 self.wisdom_proficent,
                 stats.proficiency_bonus,
+                stats,
             ),
             Self::saving_throw(
                 "CHA",
                 stats.charisma,
                 self.charisma_proficent,
                 stats.proficiency_bonus,
+                stats,
             ),
         ]
     }
@@ -246,8 +256,9 @@ impl SavingThrows {
         score: u8,
         proficient: bool,
         prof_bonus: u8,
+        stats: &Statistics,
     ) -> SavingThrowView {
-        let mut value = ability_mod(score);
+        let mut value = Statistics::ability_mod(stats, score);
 
         if proficient {
             value += prof_bonus as i8;
@@ -368,7 +379,7 @@ impl Skills {
         let value;
         let mut sp: SkillProficiency = SkillProficiency::None;
 
-        if score == "" {
+        if score.is_empty() {
             value = 0;
         } else {
             let value_opt = parse_string(&score);
