@@ -279,7 +279,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
 
     let minus_style = if matches!(view.hover, Hover::Minus) {
         Style::default()
-            .fg(Color::Yellow)
+            .fg(Color::Green)
             .add_modifier(Modifier::REVERSED)
     } else {
         Style::default().add_modifier(Modifier::REVERSED)
@@ -287,7 +287,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
 
     let plus_style = if matches!(view.hover, Hover::Plus) {
         Style::default()
-            .fg(Color::Yellow)
+            .fg(Color::Green)
             .add_modifier(Modifier::REVERSED)
     } else {
         Style::default().add_modifier(Modifier::REVERSED)
