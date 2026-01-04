@@ -488,6 +488,7 @@ pub struct App {
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub char_sheet: CharSheet,
     pub json_file_name: String,
+    pub save_file: bool,
 }
 
 impl App {
@@ -500,20 +501,23 @@ impl App {
             current_screen: CurrentScreen::Main,
             char_sheet: loaded_char_sheet,
             json_file_name: json_file.clone(),
+            save_file: true,
         }
     }
 }
 
 impl Drop for App {
     fn drop(&mut self) {
-        println!("Closing the file and writing it disk");
-        // Here you'd close a file, free memory, etc.
-        // 2. Create the output file
-        let file = File::create(self.json_file_name.clone()).unwrap();
-        let mut writer = BufWriter::new(file); // Use BufWriter for performance
-        let _ = serde_json::to_writer_pretty(&mut writer, &self.char_sheet);
+        if self.save_file {
+            println!("Closing the file and writing it disk");
+            let file = File::create(self.json_file_name.clone()).unwrap();
+            let mut writer = BufWriter::new(file); // Use BufWriter for performance
+            let _ = serde_json::to_writer_pretty(&mut writer, &self.char_sheet);
 
-        writer.flush().unwrap();
+            writer.flush().unwrap();
+        } else {
+            println!("Not saving file since self.save_file is false");
+        }
     }
 }
 
