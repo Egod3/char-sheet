@@ -61,6 +61,7 @@ fn rect_contains(rect: Rect, x: u16, y: u16) -> bool {
     x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height
 }
 
+#[derive(PartialEq)]
 enum Action {
     Quit,
     HpIncrease,
@@ -98,6 +99,18 @@ fn handle_event(event: Event, view: &mut HealthView) -> Action {
     }
 }
 
+fn apply_action(app: &mut App, action: &Action) -> bool {
+    match action {
+        Action::HpIncrease => app.char_sheet.health.increase(),
+        Action::HpDecrease => {
+            app.char_sheet.health.decrease();
+        }
+        Action::Quit => return false,
+        Action::None => {}
+    }
+    true
+}
+
 fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     app: &mut App,
@@ -108,21 +121,11 @@ fn run_app<B: Backend>(
         let timeout = std::time::Duration::from_millis(250);
 
         if event::poll(timeout)? {
-            match handle_event(event::read()?, &mut view_state.health) {
-                Action::Quit => {
-                    app.current_screen = CurrentScreen::Exiting;
-                    break Ok(false);
-                }
-
-                Action::HpIncrease => {
-                    app.char_sheet.health.increase();
-                }
-
-                Action::HpDecrease => {
-                    app.char_sheet.health.decrease();
-                }
-
-                Action::None => {}
+            let action: Action = handle_event(event::read()?, &mut view_state.health);
+            let quit: bool = apply_action(app, &action);
+            if !quit {
+                app.current_screen = CurrentScreen::Exiting;
+                break Ok(false);
             }
         }
     }
