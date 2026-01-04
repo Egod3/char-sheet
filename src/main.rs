@@ -134,6 +134,11 @@ fn run_app<B: Backend>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ratatui::crossterm::event::{
+        Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
+    };
+    use ratatui::crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
+    use ratatui::layout::Rect;
 
     #[test]
     fn apply_hp_increase_action() {
@@ -153,10 +158,6 @@ mod tests {
 
     #[test]
     fn pressing_q_returns_quit_action() {
-        use ratatui::crossterm::event::{
-            Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
-        };
-
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
             kind: KeyEventKind::Press,
@@ -168,5 +169,57 @@ mod tests {
         let action = handle_event(event, &mut view);
 
         assert!(matches!(action, Action::Quit));
+    }
+
+    #[test]
+    fn clicking_plus_returns_hp_increase() {
+        let mut view = HealthView {
+            minus_rect: Rect::new(0, 0, 0, 0),
+            plus_rect: Rect::new(0, 0, 0, 0),
+            hover: Hover::None,
+        };
+        view.plus_rect = Rect {
+            x: 10,
+            y: 5,
+            width: 5,
+            height: 1,
+        };
+
+        let event = Event::Mouse(MouseEvent {
+            kind: MouseEventKind::Up(MouseButton::Left),
+            column: 12,
+            row: 5,
+            modifiers: KeyModifiers::NONE,
+        });
+
+        let action = handle_event(event, &mut view);
+
+        assert!(matches!(action, Action::HpIncrease));
+    }
+
+    #[test]
+    fn clicking_plus_returns_hp_decrease() {
+        let mut view = HealthView {
+            minus_rect: Rect::new(0, 0, 0, 0),
+            plus_rect: Rect::new(0, 0, 0, 0),
+            hover: Hover::None,
+        };
+        view.minus_rect = Rect {
+            x: 10,
+            y: 5,
+            width: 5,
+            height: 1,
+        };
+
+        let event = Event::Mouse(MouseEvent {
+            kind: MouseEventKind::Up(MouseButton::Left),
+            column: 12,
+            row: 5,
+            modifiers: KeyModifiers::NONE,
+        });
+
+        let action = handle_event(event, &mut view);
+
+        assert!(matches!(action, Action::HpDecrease));
     }
 }
