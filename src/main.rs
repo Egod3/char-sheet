@@ -130,3 +130,43 @@ fn run_app<B: Backend>(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn apply_hp_increase_action() {
+        let mut app = App::new("resources/default_sheet.json".to_string());
+        app.save_file = false;
+        let _ = apply_action(&mut app, &Action::HpIncrease);
+        assert_eq!(app.char_sheet.health.current_hp, 1);
+    }
+
+    #[test]
+    fn apply_hp_decrease_action() {
+        let mut app = App::new("resources/default_sheet.json".to_string());
+        app.save_file = false;
+        let _ = apply_action(&mut app, &Action::HpIncrease);
+        assert_eq!(app.char_sheet.health.current_hp, 1);
+    }
+
+    #[test]
+    fn pressing_q_returns_quit_action() {
+        use ratatui::crossterm::event::{
+            Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
+        };
+
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('q'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view = HealthView::default();
+        let action = handle_event(event, &mut view);
+
+        assert!(matches!(action, Action::Quit));
+    }
+}
