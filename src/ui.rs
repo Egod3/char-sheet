@@ -212,24 +212,52 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(List::new(skills_items_one), skills_rows[1]);
 }
 
+const HP_LAYOUT_IDX: usize = 0;
+const AC_LAYOUT_IDX: usize = 1;
+const SPEED_LAYOUT_IDX: usize = 2;
+const INITIATIVE_LAYOUT_IDX: usize = 3;
+const INSPIRATION_LAYOUT_IDX: usize = 4;
+
 fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) {
+    // TODO: Consider making this whole Block borderless and titless
+    // and add a Layout to the inner HP like AC/Speed/etc
     let health_blk = Block::default()
         .borders(Borders::ALL)
-        .title("Health")
+        .title("Health & Armor")
         .style(Style::default().fg(Color::Yellow));
 
     frame.render_widget(health_blk.clone(), area);
 
     let inner_health_frame = health_blk.inner(area);
-    let health_width = 1;
+    let health_width = 50;
     let health_rows = Layout::default()
-        .direction(Direction::Vertical)
+        .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(health_width),
-            Constraint::Length(health_width),
-            Constraint::Length(health_width),
+            Constraint::Length(health_width), // Cur HP/Temp HP/Adjust HP
+            Constraint::Length(14),           // AC
+            Constraint::Length(10),           // Initiative
+            Constraint::Length(15),           // Inspiration
+            Constraint::Length(15),           // Speed
         ])
         .split(inner_health_frame);
+
+    let hp_blk = Block::default().borders(Borders::ALL).title("HP");
+    let hp_inner = hp_blk.inner(health_rows[HP_LAYOUT_IDX]);
+    //let armor_row = Layout::default()
+    //    .direction(Direction::Horizontal)
+    //    .constraints([Constraint::Length(10)])
+    //    .split(armor_inner);
+    frame.render_widget(&hp_blk, health_rows[HP_LAYOUT_IDX]);
+
+    let hp_length = 1;
+    let hp_rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(hp_length),
+            Constraint::Length(hp_length),
+            Constraint::Length(hp_length),
+        ])
+        .split(hp_inner);
 
     let hp_row = Layout::default()
         .direction(Direction::Horizontal)
@@ -237,7 +265,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
             Constraint::Ratio(2, 3), // current HP (larger)
             Constraint::Ratio(1, 3), // temp HP (smaller)
         ])
-        .split(health_rows[0]);
+        .split(hp_rows[0]);
 
     let current_hp = Paragraph::new(Line::from(vec![
         Span::raw("Current: "),
@@ -272,7 +300,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
             Constraint::Min(1),    // label
             Constraint::Length(6), // [+]
         ])
-        .split(health_rows[2]);
+        .split(hp_rows[2]);
 
     view.minus_rect = health_controls[0];
     view.plus_rect = health_controls[2];
@@ -300,7 +328,6 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
         health_controls[0],
     );
 
-    // Render the label
     frame.render_widget(
         Paragraph::new("Adjust HP").alignment(Alignment::Center),
         health_controls[1],
@@ -312,6 +339,74 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
             .style(plus_style),
         health_controls[2],
     );
+
+    let armor_blk = Block::default().borders(Borders::ALL).title("Armor Class");
+    let armor_inner = armor_blk.inner(health_rows[AC_LAYOUT_IDX]);
+    let armor_row = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(10)])
+        .split(armor_inner);
+
+    frame.render_widget(&armor_blk, health_rows[AC_LAYOUT_IDX]);
+
+    let armor = Paragraph::new(Line::from(vec![Span::styled(
+        format!(" {}", app.char_sheet.health.armor_class),
+        Style::default().add_modifier(Modifier::BOLD),
+    )]));
+
+    frame.render_widget(armor, armor_row[0]);
+
+    // Setup speed Block/Paragraph/Line
+    let speed_blk = Block::default().borders(Borders::ALL).title("Speed");
+    let speed_inner = speed_blk.inner(health_rows[SPEED_LAYOUT_IDX]);
+    let speed_row = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(8)])
+        .split(speed_inner);
+
+    frame.render_widget(&speed_blk, health_rows[SPEED_LAYOUT_IDX]);
+    let speed = Paragraph::new(Line::from(vec![Span::styled(
+        format!(" {} ft.", app.char_sheet.health.speed),
+        Style::default().add_modifier(Modifier::BOLD),
+    )]));
+    frame.render_widget(speed, speed_row[0]);
+
+    // Setup Initiative Block/Paragraph/Line
+    let initiative_blk = Block::default().borders(Borders::ALL).title("Initiative");
+    let initiative_inner = initiative_blk.inner(health_rows[INITIATIVE_LAYOUT_IDX]);
+    let initiative_row = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(15)])
+        .split(initiative_inner);
+
+    frame.render_widget(&initiative_blk, health_rows[INITIATIVE_LAYOUT_IDX]);
+    let initiative = Paragraph::new(Line::from(vec![Span::styled(
+        format!(" {}", app.char_sheet.health.initiative),
+        Style::default().add_modifier(Modifier::BOLD),
+    )]));
+    frame.render_widget(initiative, initiative_row[0]);
+
+    // TODO: make this clickable and maybe selectable and toggleable via keyboard
+    // Setup Inspiration Block/Paragraph/Line
+    let inspiration_blk = Block::default().borders(Borders::ALL).title("Inspiration");
+    let inspiration_inner = inspiration_blk.inner(health_rows[INSPIRATION_LAYOUT_IDX]);
+    let inspiration_row = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(15)])
+        .split(inspiration_inner);
+
+    frame.render_widget(&inspiration_blk, health_rows[INSPIRATION_LAYOUT_IDX]);
+    let symbol: String;
+    if app.char_sheet.statistics.inspiration {
+        symbol = "●".to_string();
+    } else {
+        symbol = "○".to_string();
+    }
+    let inspiration = Paragraph::new(Line::from(vec![Span::styled(
+        format!(" {}", symbol),
+        Style::default().add_modifier(Modifier::BOLD),
+    )]));
+    frame.render_widget(inspiration, inspiration_row[0]);
 }
 
 pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
@@ -320,7 +415,7 @@ pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
         .constraints([
             Constraint::Length(3), // Title Header                          0
             Constraint::Max(5),    // Information                           1
-            Constraint::Max(5),    // Health                                2
+            Constraint::Max(7),    // Health                                2
             Constraint::Max(13),   // Statistics, Saving_throws & Skills    3
             Constraint::Min(5),    // Prof and Language                     4
             Constraint::Length(3), // Footer                                5
