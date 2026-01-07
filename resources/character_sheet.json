@@ -67,10 +67,10 @@
     "survival_skill": "proficient"
   },
   "proficiencies_and_language": {
-    "languages_known": "",
-    "armor_proficiency": "",
-    "weapon_proficiency": "",
-    "tools_proficiency": ""
+    "languages_known": "Common, Draconic, Giant, Goblin",
+    "armor_proficiency": "Light Armor, Medium Armor, Shields",
+    "weapon_proficiency": "Martial Weapons, Simple Weapons",
+    "tools_proficiency": "Drum"
   },
   "health": {
     "armor_class": 16,
