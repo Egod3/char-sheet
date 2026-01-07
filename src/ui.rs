@@ -18,7 +18,7 @@ fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
     let paragraph = Paragraph::new(lines)
         .block(Block::default().borders(Borders::ALL).title(stat.name))
         .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::White));
+        .style(Style::default().fg(Color::Green));
 
     frame.render_widget(paragraph, area);
 }
