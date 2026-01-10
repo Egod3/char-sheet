@@ -191,6 +191,17 @@ impl Statistics {
     }
 }
 
+impl ProficienciesAndLanguage {
+    pub fn profs_and_lang_to_list_item(&self) -> Vec<ListItem<'static>> {
+        vec![
+            ListItem::new(format!("Languages Known: {}", self.languages_known)),
+            ListItem::new(format!("Armor Proficiency: {}", self.armor_proficiency)),
+            ListItem::new(format!("Tools Proficiency: {}", self.tools_proficiency)),
+            ListItem::new(format!("Weapon Proficiency: {}", self.weapon_proficiency)),
+        ]
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct SavingThrowView {
     pub name: &'static str,

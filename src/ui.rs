@@ -432,33 +432,28 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     frame.render_widget(inspiration, inspiration_row[0]);
 }
 
-pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3), // Title Header                          0
-            Constraint::Max(5),    // Information                           1
-            Constraint::Max(7),    // Health                                2
-            Constraint::Max(13),   // Statistics, Saving_throws & Skills    3
-            Constraint::Min(5),    // Prof and Language                     4
-            Constraint::Length(3), // Footer                                5
-        ])
-        .split(frame.area());
-
-    let title_block = Block::default()
+fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
+    let info_blk = Block::default()
         .borders(Borders::ALL)
-        .style(Style::default());
+        .title("Proficiencies & Languages")
+        .style(Style::default().fg(Color::Green));
+    frame.render_widget(info_blk.clone(), area);
 
-    // Create paragraph for base app
-    let title = Paragraph::new(Text::styled(
-        "D&D Character Sheet",
-        Style::default().fg(Color::Green),
-    ))
-    .block(title_block.clone());
+    let inner_info_frame = info_blk.inner(area);
+    let prof_and_lang_width = 90;
+    // Split the Proficiencies and language area into 2 rows;
+    let prof_and_lang_rows = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(prof_and_lang_width), // slot 0
+        ])
+        .split(inner_info_frame);
+    let info_list = app
+        .char_sheet
+        .proficiencies_and_language
+        .profs_and_lang_to_list_item();
 
-    frame.render_widget(title, chunks[0]);
-
-    chunks
+    frame.render_widget(List::new(info_list[..].to_vec()), prof_and_lang_rows[0]);
 }
 
 fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
@@ -525,19 +520,24 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     let info_chunk = chunks[1];
     let health_chunk = chunks[2];
     let stats_chunk = chunks[3];
-    let _prof_and_lang_chunk = chunks[4];
+    let prof_and_lang_chunk = chunks[4];
+    let _inventory = chunks[5];
     let footer_chunk = chunks[chunks.len() - 1];
 
     draw_char_info(frame, info_chunk, app);
 
     draw_abilities(frame, stats_chunk, app);
 
-    // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed
+    // TODO:
     // I am thinking of having the death saves/death fails
-    // be hidden until the player goes to 0 HP then have that pop up.
+    // be hidden until the player goes to 0 HP then have that replace the HP pane.
     // I need to think through the use cases and ensure we support
     // the char dying and being revived and being "down" but able to try death saves.
+
+    // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed
     draw_health(frame, health_chunk, app, view_state);
+
+    draw_profs(frame, prof_and_lang_chunk, app);
 
     draw_footer(frame, footer_chunk, app);
 }
