@@ -46,6 +46,36 @@ fn skill_to_list_item(skill: &SkillsView) -> ListItem<'static> {
     ))
 }
 
+pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Title Header                          0
+            Constraint::Max(5),    // Information                           1
+            Constraint::Max(7),    // Health                                2
+            Constraint::Max(13),   // Statistics, Saving_throws & Skills    3
+            Constraint::Max(6),    // Prof and Language                     4
+            Constraint::Min(5),    // Inventory?                            5
+            Constraint::Length(3), // Footer                                6
+        ])
+        .split(frame.area());
+
+    let title_block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::Green));
+
+    // Create paragraph for base app
+    let title = Paragraph::new(Text::styled(
+        "D&D Character Sheet",
+        Style::default().fg(Color::Green),
+    ))
+    .block(title_block.clone());
+
+    frame.render_widget(title, chunks[0]);
+
+    chunks
+}
+
 fn draw_char_info(frame: &mut Frame, area: Rect, app: &App) {
     let info_blk = Block::default()
         .borders(Borders::ALL)
@@ -217,11 +247,9 @@ const INITIATIVE_LAYOUT_IDX: usize = 3;
 const INSPIRATION_LAYOUT_IDX: usize = 4;
 
 fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewState) {
-    // TODO: Consider making this whole Block borderless and titless
-    // and add a Layout to the inner HP like AC/Speed/etc
     let health_blk = Block::default()
         .borders(Borders::ALL)
-        .title("Health & Armor")
+        .title("")
         .style(Style::default().fg(Color::Yellow));
 
     frame.render_widget(health_blk.clone(), area);
@@ -241,10 +269,6 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
     let hp_blk = Block::default().borders(Borders::ALL).title("HP");
     let hp_inner = hp_blk.inner(health_rows[HP_LAYOUT_IDX]);
-    //let armor_row = Layout::default()
-    //    .direction(Direction::Horizontal)
-    //    .constraints([Constraint::Length(10)])
-    //    .split(armor_inner);
     frame.render_widget(&hp_blk, health_rows[HP_LAYOUT_IDX]);
 
     let hp_length = 1;
