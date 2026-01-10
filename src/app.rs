@@ -109,6 +109,17 @@ pub struct Health {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
+pub struct Background {
+    background: String,
+    background_fulltext: String,
+    personality_traits: String,
+    ideals: String,
+    bonds: String,
+    flaws: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct CharSheet {
     pub information: Information,
     pub statistics: Statistics,
@@ -116,6 +127,7 @@ pub struct CharSheet {
     pub skills: Skills,
     pub proficiencies_and_language: ProficienciesAndLanguage,
     pub health: Health,
+    pub background: Background,
 }
 
 #[derive(Clone, Copy)]

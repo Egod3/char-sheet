@@ -85,5 +85,13 @@
     "unconscious": false,
     "death_save_saves": "0/3",
     "death_save_fails": "0/3"
+  },
+  "background": {
+    "background": "",
+    "background_fulltext": "",
+    "personality_traits": "",
+    "ideals": "",
+    "bonds": "",
+    "flaws": ""
   }
 }

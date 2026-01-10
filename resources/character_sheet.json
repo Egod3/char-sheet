@@ -85,5 +85,13 @@
     "unconscious": false,
     "death_save_saves": "0/3",
     "death_save_fails": "0/3"
+  },
+  "background": {
+    "background": "Outlander",
+    "background_fulltext": "Wanderer: You have an excellent memory for maps and geography, and you can always recall the general layout of terrain, settlements, and other features around you. In addition, you can find food and fresh water for yourself and up to five other people each day, provided that the land offers berries, small game, water, and so forth.",
+    "personality_traits": "I’m always picking things up, absently fiddling with them, and sometimes accidentally breaking them.",
+    "ideals": "Might. The strongest are meant to rule. (Evil)",
+    "bonds": "It is my duty to provide children to sustain my tribe.",
+    "flaws": "I am slow to trust members of other races, tribes, and societies."
   }
 }
