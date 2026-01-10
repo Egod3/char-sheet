@@ -245,6 +245,7 @@ const AC_LAYOUT_IDX: usize = 1;
 const SPEED_LAYOUT_IDX: usize = 2;
 const INITIATIVE_LAYOUT_IDX: usize = 3;
 const INSPIRATION_LAYOUT_IDX: usize = 4;
+const PROFICIENCY_BONUS_LAYOUT_IDX: usize = 5;
 
 fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewState) {
     let health_blk = Block::default()
@@ -260,10 +261,11 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Length(health_width), // Cur HP/Temp HP/Adjust HP
-            Constraint::Length(14),           // AC
+            Constraint::Length(14),           // Armor Class
             Constraint::Length(10),           // Initiative
             Constraint::Length(15),           // Inspiration
             Constraint::Length(15),           // Speed
+            Constraint::Length(15),           // Proficiency Bonus
         ])
         .split(inner_health_frame);
 
@@ -430,6 +432,25 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         Style::default().add_modifier(Modifier::BOLD),
     )]));
     frame.render_widget(inspiration, inspiration_row[0]);
+
+    // Setup proficiency_bonus Block/Paragraph/Line
+    let proficiency_bonus_blk = Block::default().borders(Borders::ALL).title("Prof. Bonus");
+    let proficiency_bonus_inner =
+        proficiency_bonus_blk.inner(health_rows[PROFICIENCY_BONUS_LAYOUT_IDX]);
+    let proficiency_bonus_row = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(8)])
+        .split(proficiency_bonus_inner);
+
+    frame.render_widget(
+        &proficiency_bonus_blk,
+        health_rows[PROFICIENCY_BONUS_LAYOUT_IDX],
+    );
+    let proficiency_bonus = Paragraph::new(Line::from(vec![Span::styled(
+        format!(" +{}", app.char_sheet.statistics.proficiency_bonus),
+        Style::default().add_modifier(Modifier::BOLD),
+    )]));
+    frame.render_widget(proficiency_bonus, proficiency_bonus_row[0]);
 }
 
 fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
@@ -534,7 +555,7 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     // I need to think through the use cases and ensure we support
     // the char dying and being revived and being "down" but able to try death saves.
 
-    // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed
+    // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed/Proficiency Bonus
     draw_health(frame, health_chunk, app, view_state);
 
     draw_profs(frame, prof_and_lang_chunk, app);

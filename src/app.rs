@@ -18,7 +18,6 @@ pub struct Information {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-#[allow(dead_code)]
 // Modifiers will be calculated based on rules of the game
 pub struct Statistics {
     pub strength: u8,
