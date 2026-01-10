@@ -237,4 +237,29 @@ mod tests {
 
         assert!(matches!(action, Action::HpDecrease));
     }
+
+    #[test]
+    fn clicking_inspiration_toggle() {
+        let mut view_state: ViewState = ViewState {
+            health: HealthView {
+                minus_rect: Rect::new(0, 0, 0, 0),
+                plus_rect: Rect::new(0, 0, 0, 0),
+                hover: Hover::None,
+            },
+            inspiration: InspirationView {
+                inspiration_toggle: Rect::new(10, 5, 5, 1),
+            },
+        };
+
+        let event = Event::Mouse(MouseEvent {
+            kind: MouseEventKind::Up(MouseButton::Left),
+            column: 12,
+            row: 5,
+            modifiers: KeyModifiers::NONE,
+        });
+
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::InspirationToggle));
+    }
 }
