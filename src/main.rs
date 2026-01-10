@@ -1,3 +1,4 @@
+use clap::Parser;
 use ratatui::layout::Rect;
 use std::{error::Error, io};
 
@@ -21,7 +22,25 @@ use crate::{
     ui::ui,
 };
 
+#[derive(Parser, Debug)]
+struct Args {
+    /// json_file to load instead of loading the default from "resource/character_sheet.json"
+    #[arg(short, long)]
+    json_file: Option<String>, // Truly optional
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+    let args = Args::parse();
+
+    let mut json_file: String = "".to_string();
+    let mut json_file_provided = false;
+    if let Some(in_json_name) = args.json_file {
+        println!("Value for json_file:{}", in_json_name);
+
+        json_file = in_json_name;
+        json_file_provided = true;
+    }
+
     // setup terminal
     enable_raw_mode()?;
     let mut stderr = io::stderr(); // This is a special case. Normally using stdout is fine
@@ -40,9 +59,17 @@ fn main() -> Result<(), Box<dyn Error>> {
         },
     };
 
-    // create app and run it
-    let mut app = App::new("resources/character_sheet.json".to_string());
-    let res = run_app(&mut terminal, &mut app, &mut view_state);
+    let mut app;
+    let res;
+    if json_file_provided {
+        // create app and run it
+        app = App::new(json_file.to_string());
+        res = run_app(&mut terminal, &mut app, &mut view_state);
+    } else {
+        // create app and run it
+        app = App::new("resources/character_sheet.json".to_string());
+        res = run_app(&mut terminal, &mut app, &mut view_state);
+    }
 
     // restore terminal
     disable_raw_mode()?;
