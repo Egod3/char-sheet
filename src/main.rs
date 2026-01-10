@@ -17,7 +17,7 @@ use ratatui::{
 mod app;
 mod ui;
 use crate::{
-    app::{App, CurrentScreen, HealthView, Hover, ViewState},
+    app::{App, CurrentScreen, HealthView, Hover, InspirationView, ViewState},
     ui::ui,
 };
 
@@ -34,6 +34,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             minus_rect: Rect::new(0, 0, 0, 0),
             plus_rect: Rect::new(0, 0, 0, 0),
             hover: Hover::None,
+        },
+        inspiration: InspirationView {
+            inspiration_toggle: Rect::new(0, 0, 0, 0),
         },
     };
 
@@ -66,10 +69,11 @@ enum Action {
     Quit,
     HpIncrease,
     HpDecrease,
+    InspirationToggle,
     None,
 }
 
-fn handle_event(event: Event, view: &mut HealthView) -> Action {
+fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
     match event {
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') => {
             Action::Quit
@@ -83,15 +87,25 @@ fn handle_event(event: Event, view: &mut HealthView) -> Action {
             Action::HpDecrease
         }
 
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('i') => {
+            Action::InspirationToggle
+        }
+
         Event::Mouse(mouse) if matches!(mouse.kind, MouseEventKind::Up(MouseButton::Left)) => {
-            if rect_contains(view.minus_rect, mouse.column, mouse.row) {
-                view.hover = Hover::Minus;
+            if rect_contains(view_state.health.minus_rect, mouse.column, mouse.row) {
+                view_state.health.hover = Hover::Minus;
                 Action::HpDecrease
-            } else if rect_contains(view.plus_rect, mouse.column, mouse.row) {
-                view.hover = Hover::Plus;
+            } else if rect_contains(view_state.health.plus_rect, mouse.column, mouse.row) {
+                view_state.health.hover = Hover::Plus;
                 Action::HpIncrease
+            } else if rect_contains(
+                view_state.inspiration.inspiration_toggle,
+                mouse.column,
+                mouse.row,
+            ) {
+                Action::InspirationToggle
             } else {
-                view.hover = Hover::None;
+                view_state.health.hover = Hover::None;
                 Action::None
             }
         }
@@ -104,6 +118,9 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
         Action::HpIncrease => app.char_sheet.health.increase(),
         Action::HpDecrease => {
             app.char_sheet.health.decrease();
+        }
+        Action::InspirationToggle => {
+            app.char_sheet.statistics.insp_toggle();
         }
         Action::Quit => return false,
         Action::None => {}
@@ -121,7 +138,7 @@ fn run_app<B: Backend>(
         let timeout = std::time::Duration::from_millis(250);
 
         if event::poll(timeout)? {
-            let action: Action = handle_event(event::read()?, &mut view_state.health);
+            let action: Action = handle_event(event::read()?, view_state);
             let quit: bool = apply_action(app, &action);
             if !quit {
                 app.current_screen = CurrentScreen::Exiting;
@@ -165,24 +182,23 @@ mod tests {
             state: KeyEventState::NONE,
         });
 
-        let mut view = HealthView::default();
-        let action = handle_event(event, &mut view);
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
 
         assert!(matches!(action, Action::Quit));
     }
 
     #[test]
     fn clicking_plus_returns_hp_increase() {
-        let mut view = HealthView {
-            minus_rect: Rect::new(0, 0, 0, 0),
-            plus_rect: Rect::new(0, 0, 0, 0),
-            hover: Hover::None,
-        };
-        view.plus_rect = Rect {
-            x: 10,
-            y: 5,
-            width: 5,
-            height: 1,
+        let mut view_state: ViewState = ViewState {
+            health: HealthView {
+                minus_rect: Rect::new(0, 0, 0, 0),
+                plus_rect: Rect::new(10, 5, 5, 1),
+                hover: Hover::None,
+            },
+            inspiration: InspirationView {
+                inspiration_toggle: Rect::new(0, 0, 0, 0),
+            },
         };
 
         let event = Event::Mouse(MouseEvent {
@@ -192,23 +208,22 @@ mod tests {
             modifiers: KeyModifiers::NONE,
         });
 
-        let action = handle_event(event, &mut view);
+        let action = handle_event(event, &mut view_state);
 
         assert!(matches!(action, Action::HpIncrease));
     }
 
     #[test]
     fn clicking_plus_returns_hp_decrease() {
-        let mut view = HealthView {
-            minus_rect: Rect::new(0, 0, 0, 0),
-            plus_rect: Rect::new(0, 0, 0, 0),
-            hover: Hover::None,
-        };
-        view.minus_rect = Rect {
-            x: 10,
-            y: 5,
-            width: 5,
-            height: 1,
+        let mut view_state: ViewState = ViewState {
+            health: HealthView {
+                minus_rect: Rect::new(10, 5, 5, 1),
+                plus_rect: Rect::new(0, 0, 0, 0),
+                hover: Hover::None,
+            },
+            inspiration: InspirationView {
+                inspiration_toggle: Rect::new(0, 0, 0, 0),
+            },
         };
 
         let event = Event::Mouse(MouseEvent {
@@ -218,7 +233,7 @@ mod tests {
             modifiers: KeyModifiers::NONE,
         });
 
-        let action = handle_event(event, &mut view);
+        let action = handle_event(event, &mut view_state);
 
         assert!(matches!(action, Action::HpDecrease));
     }

@@ -184,6 +184,11 @@ impl Statistics {
             },
         ]
     }
+
+    pub fn insp_toggle(&mut self) -> bool {
+        self.inspiration = !self.inspiration;
+        self.inspiration
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -447,8 +452,7 @@ impl Health {
 #[derive(Default)]
 pub struct ViewState {
     pub health: HealthView,
-    // TODO: Move other View's into this structure
-    // stats_view, skills_view, etc
+    pub inspiration: InspirationView,
 }
 
 #[derive(Default)]
@@ -464,6 +468,11 @@ pub struct HealthView {
     pub minus_rect: Rect,
     pub plus_rect: Rect,
     pub hover: Hover,
+}
+
+#[derive(Default)]
+pub struct InspirationView {
+    pub inspiration_toggle: Rect,
 }
 
 pub enum CurrentScreen {

@@ -6,9 +6,7 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{
-    App, CurrentScreen, HealthView, Hover, SavingThrowView, SkillsView, StatView, ViewState,
-};
+use crate::app::{App, CurrentScreen, Hover, SavingThrowView, SkillsView, StatView, ViewState};
 
 use std::rc::Rc;
 
@@ -218,7 +216,7 @@ const SPEED_LAYOUT_IDX: usize = 2;
 const INITIATIVE_LAYOUT_IDX: usize = 3;
 const INSPIRATION_LAYOUT_IDX: usize = 4;
 
-fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) {
+fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewState) {
     // TODO: Consider making this whole Block borderless and titless
     // and add a Layout to the inner HP like AC/Speed/etc
     let health_blk = Block::default()
@@ -302,10 +300,10 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
         ])
         .split(hp_rows[2]);
 
-    view.minus_rect = health_controls[0];
-    view.plus_rect = health_controls[2];
+    view_state.health.minus_rect = health_controls[0];
+    view_state.health.plus_rect = health_controls[2];
 
-    let minus_style = if matches!(view.hover, Hover::Minus) {
+    let minus_style = if matches!(view_state.health.hover, Hover::Minus) {
         Style::default()
             .fg(Color::Green)
             .add_modifier(Modifier::REVERSED)
@@ -313,7 +311,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
         Style::default().add_modifier(Modifier::REVERSED)
     };
 
-    let plus_style = if matches!(view.hover, Hover::Plus) {
+    let plus_style = if matches!(view_state.health.hover, Hover::Plus) {
         Style::default()
             .fg(Color::Green)
             .add_modifier(Modifier::REVERSED)
@@ -386,7 +384,9 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
     )]));
     frame.render_widget(initiative, initiative_row[0]);
 
-    // TODO: make this clickable and maybe selectable and toggleable via keyboard
+    // hook up inspiration_toggle to the inspiration box
+    view_state.inspiration.inspiration_toggle = health_rows[INSPIRATION_LAYOUT_IDX];
+
     // Setup Inspiration Block/Paragraph/Line
     let inspiration_blk = Block::default().borders(Borders::ALL).title("Inspiration");
     let inspiration_inner = inspiration_blk.inner(health_rows[INSPIRATION_LAYOUT_IDX]);
@@ -396,12 +396,11 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view: &mut HealthView) 
         .split(inspiration_inner);
 
     frame.render_widget(&inspiration_blk, health_rows[INSPIRATION_LAYOUT_IDX]);
-    let symbol: String;
-    if app.char_sheet.statistics.inspiration {
-        symbol = "●".to_string();
+    let symbol = if app.char_sheet.statistics.inspiration {
+        "●".to_string()
     } else {
-        symbol = "○".to_string();
-    }
+        "○".to_string()
+    };
     let inspiration = Paragraph::new(Line::from(vec![Span::styled(
         format!(" {}", symbol),
         Style::default().add_modifier(Modifier::BOLD),
@@ -514,7 +513,7 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     // be hidden until the player goes to 0 HP then have that pop up.
     // I need to think through the use cases and ensure we support
     // the char dying and being revived and being "down" but able to try death saves.
-    draw_health(frame, health_chunk, app, &mut view_state.health);
+    draw_health(frame, health_chunk, app, view_state);
 
     draw_footer(frame, footer_chunk, app);
 }
