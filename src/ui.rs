@@ -11,7 +11,18 @@ use crate::app::{App, CurrentScreen, Hover, SavingThrowView, SkillsView, StatVie
 use std::rc::Rc;
 
 fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
-    let lines = vec![Line::from(format!("{:+} ({:})", stat.modifier, stat.value))];
+    let modifier_style = if stat.modifier >= 0 {
+        Style::default().fg(Color::Green)
+    } else {
+        Style::default().fg(Color::Red)
+    };
+    let lines = vec![Line::from(vec![
+        Span::styled(format!("{:+} ", stat.modifier), modifier_style),
+        Span::styled(
+            format!("({:})", stat.value),
+            Style::default().fg(Color::Green),
+        ),
+    ])];
 
     let paragraph = Paragraph::new(lines)
         .block(Block::default().borders(Borders::ALL).title(stat.name))
@@ -38,12 +49,16 @@ fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect) {
 }
 
 fn skill_to_list_item(skill: &SkillsView) -> ListItem<'static> {
-    ListItem::new(format!(
-        "{} {:<14} {:+}",
-        skill.sp.symbol(),
-        skill.name,
-        skill.value,
-    ))
+    let skill_style = if skill.value >= 0 {
+        Style::default().fg(Color::Green)
+    } else {
+        Style::default().fg(Color::Red)
+    };
+    ListItem::new(Line::from(vec![
+        Span::raw(format!("{} ", skill.sp.symbol())),
+        Span::raw(format!("{:<3} ", skill.name)),
+        Span::styled(format!("{:+}", skill.value,), skill_style),
+    ]))
 }
 
 pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
@@ -51,7 +66,7 @@ pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3), // Title Header                          0
-            Constraint::Max(5),    // Information                           1
+            Constraint::Max(6),    // Information                           1
             Constraint::Max(7),    // Health                                2
             Constraint::Max(13),   // Statistics, Saving_throws & Skills    3
             Constraint::Max(6),    // Prof and Language                     4
@@ -84,28 +99,22 @@ fn draw_char_info(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(info_blk.clone(), area);
 
     let inner_info_frame = info_blk.inner(area);
-    let char_info_width = 40;
-    // Split the "Character info" area into 3 rows;
+    let char_info_width = 60;
     let char_info_rows = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
             Constraint::Length(char_info_width + 10), // slot 0
             Constraint::Length(char_info_width - 10), // slot 1
-            Constraint::Length(char_info_width - 10), // slot 2
         ])
         .split(inner_info_frame);
     let info_list = app.char_sheet.information.information_to_list_item();
-    let char_info_row_len = 3;
+    let char_info_row_len = 4;
 
     let char_info_items_zero: Vec<ListItem> = info_list[0..char_info_row_len].to_vec();
-    let char_info_items_one: Vec<ListItem> =
-        info_list[char_info_row_len..char_info_row_len * 2].to_vec();
-    let end = 8;
-    let char_info_items_two: Vec<ListItem> = info_list[char_info_row_len * 2..end].to_vec();
+    let char_info_items_one: Vec<ListItem> = info_list[char_info_row_len..info_list.len()].to_vec();
 
     frame.render_widget(List::new(char_info_items_zero), char_info_rows[0]);
     frame.render_widget(List::new(char_info_items_one), char_info_rows[1]);
-    frame.render_widget(List::new(char_info_items_two), char_info_rows[2]);
 }
 
 fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
