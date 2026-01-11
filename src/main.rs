@@ -24,7 +24,7 @@ use crate::{
 
 #[derive(Parser, Debug)]
 struct Args {
-    /// json_file to load instead of loading the default from "resource/character_sheet.json"
+    /// json_file to load instead of loading the default from "resource/default_sheet.json"
     #[arg(short, long)]
     json_file: Option<String>, // Truly optional
 }
@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         res = run_app(&mut terminal, &mut app, &mut view_state);
     } else {
         // create app and run it
-        app = App::new("resources/character_sheet.json".to_string());
+        app = App::new("resources/default_sheet.json".to_string());
         res = run_app(&mut terminal, &mut app, &mut view_state);
     }
 
