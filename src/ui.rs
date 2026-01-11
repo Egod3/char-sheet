@@ -70,8 +70,9 @@ pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
             Constraint::Max(7),    // Health                                2
             Constraint::Max(13),   // Statistics, Saving_throws & Skills    3
             Constraint::Max(6),    // Prof and Language                     4
-            Constraint::Min(5),    // Inventory?                            5
-            Constraint::Length(3), // Footer                                6
+            Constraint::Max(7),    // Background                            5
+            Constraint::Min(5),    // Inventory?                            6
+            Constraint::Length(3), // Footer                                7
         ])
         .split(frame.area());
 
@@ -469,7 +470,7 @@ fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
         .style(Style::default().fg(Color::Green));
     frame.render_widget(info_blk.clone(), area);
 
-    let inner_info_frame = info_blk.inner(area);
+    let inner_profs_frame = info_blk.inner(area);
     let prof_and_lang_width = 90;
     // Split the Proficiencies and language area into 2 rows;
     let prof_and_lang_rows = Layout::default()
@@ -477,13 +478,34 @@ fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
         .constraints([
             Constraint::Length(prof_and_lang_width), // slot 0
         ])
-        .split(inner_info_frame);
+        .split(inner_profs_frame);
     let info_list = app
         .char_sheet
         .proficiencies_and_language
         .profs_and_lang_to_list_item();
 
     frame.render_widget(List::new(info_list[..].to_vec()), prof_and_lang_rows[0]);
+}
+
+fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
+    let background_blk = Block::default()
+        .borders(Borders::ALL)
+        .title("Backgound")
+        .style(Style::default().fg(Color::Green));
+    frame.render_widget(background_blk.clone(), area);
+
+    let inner_bg_frame = background_blk.inner(area);
+    let background_width = 120;
+    // Split the Proficiencies and language area into 2 rows;
+    let prof_and_lang_rows = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(background_width), // slot 0
+        ])
+        .split(inner_bg_frame);
+    let bg_list = app.char_sheet.background.background_to_list_item();
+
+    frame.render_widget(List::new(bg_list[..].to_vec()), prof_and_lang_rows[0]);
 }
 
 fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
@@ -531,7 +553,8 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     let health_chunk = chunks[2];
     let stats_chunk = chunks[3];
     let prof_and_lang_chunk = chunks[4];
-    let _inventory = chunks[5];
+    let background = chunks[5];
+    let _inventory = chunks[6];
     let footer_chunk = chunks[chunks.len() - 1];
 
     draw_char_info(frame, info_chunk, app);
@@ -548,6 +571,8 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     draw_health(frame, health_chunk, app, view_state);
 
     draw_profs(frame, prof_and_lang_chunk, app);
+
+    draw_background(frame, background, app);
 
     draw_footer(frame, footer_chunk, app);
 }

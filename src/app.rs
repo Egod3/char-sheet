@@ -211,6 +211,18 @@ impl ProficienciesAndLanguage {
     }
 }
 
+impl Background {
+    pub fn background_to_list_item(&self) -> Vec<ListItem<'static>> {
+        vec![
+            ListItem::new(format!("Background: {}", self.background)),
+            ListItem::new(format!("Personality Traits: {}", self.personality_traits)),
+            ListItem::new(format!("Ideals: {}", self.ideals)),
+            ListItem::new(format!("Bonds: {}", self.bonds)),
+            ListItem::new(format!("Flaws: {}", self.flaws)),
+        ]
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct SavingThrowView {
     pub name: &'static str,
