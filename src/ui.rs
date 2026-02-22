@@ -7,8 +7,88 @@ use ratatui::{
 };
 
 use crate::app::{App, CurrentScreen, Hover, SavingThrowView, SkillsView, StatView, ViewState};
+use strum::FromRepr;
 
 use std::rc::Rc;
+
+const HP_LAYOUT_IDX: usize = 0;
+const AC_LAYOUT_IDX: usize = 1;
+const SPEED_LAYOUT_IDX: usize = 2;
+const INITIATIVE_LAYOUT_IDX: usize = 3;
+const INSPIRATION_LAYOUT_IDX: usize = 4;
+const PROFICIENCY_BONUS_LAYOUT_IDX: usize = 5;
+
+#[derive(Default, Clone, Copy, FromRepr, PartialEq)]
+pub enum SelectedTabBackGround {
+    #[default]
+    ProfLangTab,
+    BackgroundTab,
+}
+
+impl SelectedTabBackGround {
+    /// Get the previous tab, if there is no previous tab return the current tab.
+    pub fn previous(self) -> Self {
+        let current_index: usize = self as usize;
+        let previous_index = current_index.saturating_sub(1);
+        Self::from_repr(previous_index).unwrap_or(self)
+    }
+
+    /// Get the next tab, if there is no next tab return the current tab.
+    pub fn next(self) -> Self {
+        let current_index = self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(self)
+    }
+}
+
+/*
+impl Widget for SelectedTabBackGround {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        // in a real app these might be separate widgets
+        match self {
+            Self::ProfLangTab => self.render_tab_prof(area, buf),
+            Self::BackgroundTab => self.render_tab_bg(area, buf),
+        }
+    }
+}
+
+impl SelectedTabBackGround {
+    /// Return tab's name as a styled `Line`
+    fn title(self) -> Line<'static> {
+        format!("  {self}  ")
+            .fg(tailwind::SLATE.c200)
+            .bg(self.palette().c900)
+            .into()
+    }
+
+    fn render_tab_prof(self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new("Proficiencies & Languages")
+            .block(self.block())
+            .render(area, buf);
+    }
+
+    fn render_tab_bg(self, area: Rect, buf: &mut Buffer) {
+        Paragraph::new("Background")
+            .block(self.block())
+            .render(area, buf);
+    }
+
+    /// A block surrounding the tab's content
+    fn block(self) -> Block<'static> {
+        Block::bordered()
+            .border_set(symbols::border::PROPORTIONAL_TALL)
+            .padding(Padding::horizontal(1))
+            .border_style(self.palette().c700)
+    }
+
+    const fn palette(self) -> tailwind::Palette {
+        match self {
+            Self::ProfLangTab => tailwind::BLUE,
+            Self::BackgroundTab => tailwind::EMERALD,
+        }
+    }
+}
+*/
 
 fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
     let modifier_style = if stat.modifier >= 0 {
@@ -69,10 +149,9 @@ pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
             Constraint::Max(6),    // Information                           1
             Constraint::Max(7),    // Health                                2
             Constraint::Max(13),   // Statistics, Saving_throws & Skills    3
-            Constraint::Max(6),    // Prof and Language                     4
-            Constraint::Max(7),    // Background                            5
-            Constraint::Min(5),    // Inventory?                            6
-            Constraint::Length(3), // Footer                                7
+            Constraint::Max(6),    // Prof and Language // Background       4
+            Constraint::Min(5),    // Inventory?                            5
+            Constraint::Length(3), // Footer                                6
         ])
         .split(frame.area());
 
@@ -249,13 +328,6 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(List::new(skills_items_zero), skills_rows[0]);
     frame.render_widget(List::new(skills_items_one), skills_rows[1]);
 }
-
-const HP_LAYOUT_IDX: usize = 0;
-const AC_LAYOUT_IDX: usize = 1;
-const SPEED_LAYOUT_IDX: usize = 2;
-const INITIATIVE_LAYOUT_IDX: usize = 3;
-const INSPIRATION_LAYOUT_IDX: usize = 4;
-const PROFICIENCY_BONUS_LAYOUT_IDX: usize = 5;
 
 fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewState) {
     let health_blk = Block::default()
@@ -464,9 +536,10 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 }
 
 fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
+    let title_prof = "Proficiencies & Languages";
     let info_blk = Block::default()
         .borders(Borders::ALL)
-        .title("Proficiencies & Languages")
+        .title(title_prof)
         .style(Style::default().fg(Color::Green));
     frame.render_widget(info_blk.clone(), area);
 
@@ -549,13 +622,13 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
 pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     let chunks = draw_title(frame);
 
+    // chunks[0] is reserved for the Title of the Application
     let info_chunk = chunks[1];
     let health_chunk = chunks[2];
     let stats_chunk = chunks[3];
-    let prof_and_lang_chunk = chunks[4];
-    let background = chunks[5];
-    let _inventory = chunks[6];
-    let footer_chunk = chunks[chunks.len() - 1];
+    let prof_n_bg_chunk = chunks[4]; // Proficiency & Language || Background Tab
+    let _inventory = chunks[5];
+    let footer_chunk = chunks[chunks.len() - 1]; // 6
 
     draw_char_info(frame, info_chunk, app);
 
@@ -570,9 +643,13 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed/Proficiency Bonus
     draw_health(frame, health_chunk, app, view_state);
 
-    draw_profs(frame, prof_and_lang_chunk, app);
-
-    draw_background(frame, background, app);
+    //draw_profs_bg_tab(frame, prof_n_bg_chunk, app);
+    if app.sel_tab_bck_grnd == SelectedTabBackGround::ProfLangTab {
+        draw_profs(frame, prof_n_bg_chunk, app);
+    } else if app.sel_tab_bck_grnd == SelectedTabBackGround::BackgroundTab {
+        //draw_background(frame, background, app);
+        draw_background(frame, prof_n_bg_chunk, app);
+    }
 
     draw_footer(frame, footer_chunk, app);
 }

@@ -97,6 +97,8 @@ enum Action {
     HpIncrease,
     HpDecrease,
     InspirationToggle,
+    NextTab,
+    PrevTab,
     None,
 }
 
@@ -104,6 +106,14 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
     match event {
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') => {
             Action::Quit
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('l') => {
+            Action::NextTab
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('h') => {
+            Action::PrevTab
         }
 
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('+') => {
@@ -142,6 +152,8 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
 
 fn apply_action(app: &mut App, action: &Action) -> bool {
     match action {
+        Action::NextTab => app.next_tab(),
+        Action::PrevTab => app.previous_tab(),
         Action::HpIncrease => app.char_sheet.health.increase(),
         Action::HpDecrease => {
             app.char_sheet.health.decrease();

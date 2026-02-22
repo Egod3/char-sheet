@@ -1,3 +1,4 @@
+use crate::ui::SelectedTabBackGround;
 use ratatui::layout::Rect;
 use ratatui::widgets::ListItem;
 use serde::{Deserialize, Serialize};
@@ -530,6 +531,8 @@ pub struct App {
     pub char_sheet: CharSheet,
     pub json_file_name: String,
     pub save_file: bool,
+    // SelectedTab_BackGround or st_bg
+    pub sel_tab_bck_grnd: SelectedTabBackGround,
 }
 
 impl App {
@@ -543,7 +546,16 @@ impl App {
             char_sheet: loaded_char_sheet,
             json_file_name: json_file.clone(),
             save_file: true,
+            sel_tab_bck_grnd: SelectedTabBackGround::ProfLangTab,
         }
+    }
+
+    pub fn next_tab(&mut self) {
+        self.sel_tab_bck_grnd = self.sel_tab_bck_grnd.next();
+    }
+
+    pub fn previous_tab(&mut self) {
+        self.sel_tab_bck_grnd = self.sel_tab_bck_grnd.previous();
     }
 }
 
