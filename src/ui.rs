@@ -143,12 +143,13 @@ fn skill_to_list_item(skill: &SkillsView) -> ListItem<'static> {
 
 pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
     let chunks = Layout::default()
+        //.margin(1)
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3), // Title Header                          0
             Constraint::Max(6),    // Information                           1
             Constraint::Max(7),    // Health                                2
-            Constraint::Max(13),   // Statistics, Saving_throws & Skills    3
+            Constraint::Max(11),   // Statistics, Saving_throws & Skills    3
             Constraint::Max(6),    // Prof and Language // Background       4
             Constraint::Min(5),    // Inventory?                            5
             Constraint::Length(3), // Footer                                6
@@ -213,7 +214,7 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
         .constraints([
             Constraint::Min(0),     // Statistics grid
             Constraint::Length(16), // Savings throw box
-            Constraint::Length(58), // Skills box
+            Constraint::Length(84), // Skills box
         ])
         .split(inner_stats_frame);
 
@@ -304,11 +305,12 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
 
     // Get the skills_view array
     let skills_views = app.char_sheet.skills.skills_views();
-    let skills_row_size = skills_views.len() / 2;
+    let skills_row_size = skills_views.len() / 3;
     let skills_box_width = 28;
     let skills_rows = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
+            Constraint::Length(skills_box_width),
             Constraint::Length(skills_box_width),
             Constraint::Length(skills_box_width),
         ])
@@ -322,11 +324,18 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
     let skills_items_one: Vec<ListItem> = skills_views
         .iter()
         .skip(skills_row_size)
+        .take(skills_row_size)
+        .map(skill_to_list_item)
+        .collect();
+    let skills_items_two: Vec<ListItem> = skills_views
+        .iter()
+        .skip(skills_row_size * 2)
         .map(skill_to_list_item)
         .collect();
 
     frame.render_widget(List::new(skills_items_zero), skills_rows[0]);
     frame.render_widget(List::new(skills_items_one), skills_rows[1]);
+    frame.render_widget(List::new(skills_items_two), skills_rows[2]);
 }
 
 fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewState) {
@@ -375,10 +384,14 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
     let current_hp = Paragraph::new(Line::from(vec![
         Span::raw("Current: "),
+        // TODO: Do I want to show tmp HP as:
+        //       51/50      tmp: 1
+        // or    50/50      tmp: 1
         Span::styled(
             format!(
                 "{}/{}",
-                app.char_sheet.health.current_hp, app.char_sheet.health.maximum_hp
+                app.char_sheet.health.current_hp + app.char_sheet.health.temporary_hp,
+                app.char_sheet.health.maximum_hp
             ),
             Style::default().add_modifier(Modifier::BOLD),
         ),

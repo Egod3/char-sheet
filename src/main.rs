@@ -99,6 +99,7 @@ enum Action {
     InspirationToggle,
     NextTab,
     PrevTab,
+    EditChunk, // use w/ "selected_chunk" state and we can represent editing each chunk we have
     None,
 }
 
@@ -114,6 +115,10 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
 
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('h') => {
             Action::PrevTab
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('e') => {
+            Action::EditChunk
         }
 
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('+') => {
@@ -162,6 +167,11 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
             app.char_sheet.statistics.insp_toggle();
         }
         Action::Quit => return false,
+        // TODO: add support to edit each of the text area's that make sense to allow the user to
+        // edit
+        Action::EditChunk => {
+            //println!("edit chunk seleted!");
+        }
         Action::None => {}
     }
     true

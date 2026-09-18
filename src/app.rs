@@ -470,14 +470,25 @@ fn parse_string(s: &str) -> Option<i8> {
 
 impl Health {
     pub fn increase(&mut self) {
+        if self.current_hp == self.maximum_hp {
+            self.temporary_hp += 1;
+        }
         self.current_hp = (self.current_hp + 1).min(self.maximum_hp);
     }
 
     pub fn decrease(&mut self) {
-        if self.current_hp >= 1 {
-            self.current_hp = self.current_hp - 1;
+        if self.temporary_hp == 0 {
+            if self.current_hp >= 1 {
+                self.current_hp -= 1;
+            } else {
+                self.current_hp = 0;
+            }
         } else {
-            self.current_hp = 0;
+            if self.temporary_hp >= 1 {
+                self.temporary_hp -= 1;
+            } else {
+                self.temporary_hp = 0;
+            }
         }
     }
 }
