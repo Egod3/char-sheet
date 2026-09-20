@@ -42,13 +42,21 @@ impl SelectedTabBackGround {
 }
 
 /*
-impl Widget for SelectedTabBackGround {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        // in a real app these might be separate widgets
-        match self {
-            Self::ProfLangTab => self.render_tab_prof(area, buf),
-            Self::BackgroundTab => self.render_tab_bg(area, buf),
-        }
+impl Widget for SelectedTableTab {
+    fn render(self, area: Rect, buf: &mut ratatui::prelude::Buffer) {
+        Tabs::new(
+            SelectedTableTab::iter().map(|x| Line::from(x.to_string()).fg(SECONDARY_COLOR).bold()),
+        )
+        .dividier(symbols::DOT)
+        .highlight_style(
+            Style::default()
+                .underlinded()
+                .underlied_color(HIGHLIGHTED_COLOR),
+        )
+        .padding(" ", "")
+        .selected(self as usize)
+        .block(Block::default().borders(Borders::LEFT))
+        .render(area, buf);
     }
 }
 
@@ -150,7 +158,7 @@ pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
             Constraint::Max(6),    // Information                           1
             Constraint::Max(7),    // Health                                2
             Constraint::Max(11),   // Statistics, Saving_throws & Skills    3
-            Constraint::Max(6),    // Prof and Language // Background       4
+            Constraint::Max(10),   // Prof and Language // Background       4
             Constraint::Min(5),    // Inventory?                            5
             Constraint::Length(3), // Footer                                6
         ])
@@ -172,7 +180,7 @@ pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
     chunks
 }
 
-fn draw_char_info(frame: &mut Frame, area: Rect, app: &App) {
+fn draw_char_info(frame: &mut Frame, area: Rect, app: &mut App) {
     let info_blk = Block::default()
         .borders(Borders::ALL)
         .title("Character Information")
@@ -548,6 +556,33 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     frame.render_widget(proficiency_bonus, proficiency_bonus_row[0]);
 }
 
+/// Render the tabs.
+pub fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
+    let tab_blk = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::Green));
+    frame.render_widget(tab_blk.clone(), area);
+
+    match app.sel_tab_bck_grnd {
+        SelectedTabBackGround::ProfLangTab => draw_profs(frame, tab_blk.inner(area), app),
+        SelectedTabBackGround::BackgroundTab => draw_background(frame, tab_blk.inner(area), app),
+    }
+
+    let title_prof = "Proficiencies & Languages";
+    let title_bg = "Backgound";
+    let tabs = Tabs::new(vec![title_prof, title_bg])
+        //.style(Style::default().fg(Color::Red))
+        .highlight_style(Style::default().green().on_black().bold())
+        .select(app.sel_tab_bck_grnd as usize)
+        .divider(symbols::DOT)
+        .padding("<-", "->");
+    frame.render_widget(tabs, tab_blk.inner(area));
+}
+
+fn draw_profs_bg_tab(frame: &mut Frame, area: Rect, app: &App) {
+    render_tabs(frame, area, app);
+}
+
 fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
     let title_prof = "Proficiencies & Languages";
     let info_blk = Block::default()
@@ -574,9 +609,10 @@ fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
+    let title_bg = "Backgound";
     let background_blk = Block::default()
         .borders(Borders::ALL)
-        .title("Backgound")
+        .title(title_bg)
         .style(Style::default().fg(Color::Green));
     frame.render_widget(background_blk.clone(), area);
 
@@ -656,13 +692,13 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed/Proficiency Bonus
     draw_health(frame, health_chunk, app, view_state);
 
-    //draw_profs_bg_tab(frame, prof_n_bg_chunk, app);
-    if app.sel_tab_bck_grnd == SelectedTabBackGround::ProfLangTab {
-        draw_profs(frame, prof_n_bg_chunk, app);
-    } else if app.sel_tab_bck_grnd == SelectedTabBackGround::BackgroundTab {
-        //draw_background(frame, background, app);
-        draw_background(frame, prof_n_bg_chunk, app);
-    }
+    draw_profs_bg_tab(frame, prof_n_bg_chunk, app);
+    //if app.sel_tab_bck_grnd == SelectedTabBackGround::ProfLangTab {
+    //    draw_profs(frame, prof_n_bg_chunk, app);
+    //} else if app.sel_tab_bck_grnd == SelectedTabBackGround::BackgroundTab {
+    //    //draw_background(frame, background, app);
+    //    draw_background(frame, prof_n_bg_chunk, app);
+    //}
 
     draw_footer(frame, footer_chunk, app);
 }
