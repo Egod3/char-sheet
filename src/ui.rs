@@ -10,8 +10,6 @@ use ratatui::{
 use crate::app::{App, CurrentScreen, Hover, SavingThrowView, SkillsView, StatView, ViewState};
 use strum::FromRepr;
 
-use std::rc::Rc;
-
 const HP_LAYOUT_IDX: usize = 0;
 const AC_LAYOUT_IDX: usize = 1;
 const SPEED_LAYOUT_IDX: usize = 2;
@@ -24,6 +22,7 @@ pub enum SelectedTabBackGround {
     #[default]
     ProfLangTab,
     BackgroundTab,
+    //FeatTraitTab,
 }
 
 impl SelectedTabBackGround {
@@ -551,6 +550,8 @@ pub fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
     match app.sel_tab_bck_grnd {
         SelectedTabBackGround::ProfLangTab => draw_profs(frame, tab_blk.inner(area), app),
         SelectedTabBackGround::BackgroundTab => draw_background(frame, tab_blk.inner(area), app),
+        //SelectedTabBackGround::FeatTraitTab => draw_feat_n_trait(frame, tab_blk.inner(area), app),
+        //SelectedTabBackGround::FeatTraitTab => {}
     }
 
     let title_prof = "Proficiencies & Languages";
@@ -622,6 +623,40 @@ fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
 
     frame.render_widget(List::new(bg_list[..].to_vec()), prof_and_lang_rows[0]);
 }
+
+// // WIP: TODO: I need to figure out how to represent the Classes.
+//          One option is this:
+//          pub struct Class {
+//              primary_class: Class,
+//              primary_sub_class: SubClass,
+//              secondary_class: Class,
+//              secondary_sub_class: SubClass,
+//              level_primary: u8,
+//              level_secondary: u8,
+//          }
+//          And then just encode all of the class logic into the game code
+//          and put the data into the char sheet.json and load it for each char.
+//
+// fn draw_feat_n_trait(frame: &mut Frame, area: Rect, app: &App) {
+//     let title_feat = "Features & Traits";
+//     let blk = Block::default()
+//         .borders(Borders::ALL)
+//         .title(title_feat)
+//         .style(Style::default().fg(Color::Green));
+//     frame.render_widget(blk.clone(), area);
+//
+//     let inner_frame = blk.inner(area);
+//     let width = 120;
+//     let rows = Layout::default()
+//         .direction(Direction::Horizontal)
+//         .constraints([
+//             Constraint::Length(width), // slot 0
+//         ])
+//         .split(inner_frame);
+//     let list = app.char_sheet.features.features_to_list_item();
+//
+//     frame.render_widget(List::new(list[..].to_vec()), rows[0]);
+// }
 
 fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
     /*

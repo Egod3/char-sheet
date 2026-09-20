@@ -128,6 +128,7 @@ pub struct CharSheet {
     pub proficiencies_and_language: ProficienciesAndLanguage,
     pub health: Health,
     pub background: Background,
+    //pub traits: Traits,
 }
 
 #[derive(Clone, Copy)]
