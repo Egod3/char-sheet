@@ -138,6 +138,7 @@ pub struct StatView {
 }
 
 impl Information {
+    #[allow(dead_code)]
     pub fn information_to_list_item(&self) -> Vec<ListItem<'static>> {
         vec![
             ListItem::new(format!("Char Name: {}", self.character_name)),

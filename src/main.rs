@@ -1,5 +1,6 @@
 use clap::Parser;
 use ratatui::layout::Rect;
+use std::process::Command;
 use std::{error::Error, io};
 
 use ratatui::{
@@ -27,10 +28,26 @@ struct Args {
     /// json_file to load instead of loading the default from "resource/default_sheet.json"
     #[arg(short, long)]
     json_file: Option<String>, // Truly optional
+
+    /// The version of the app based on the git tag/version
+    #[arg(short, long)]
+    version: bool, // Truly optional
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
+
+    if args.version {
+        let version = Command::new("git")
+            .args(["describe", "--tags", "--long", "--dirty=-modified"])
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+        println!("git version:{}", version);
+        return Ok(());
+    }
 
     let mut json_file: String = "".to_string();
     let mut json_file_provided = false;
@@ -60,16 +77,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let mut app;
-    let res;
     if json_file_provided {
         // create app and run it
         app = App::new(json_file.to_string());
-        res = run_app(&mut terminal, &mut app, &mut view_state);
     } else {
         // create app and run it
         app = App::new("resources/default_sheet.json".to_string());
-        res = run_app(&mut terminal, &mut app, &mut view_state);
     }
+    let res = run_app(&mut terminal, &mut app, &mut view_state);
 
     // restore terminal
     disable_raw_mode()?;
