@@ -150,21 +150,7 @@ fn skill_to_list_item(skill: &SkillsView) -> ListItem<'static> {
     ]))
 }
 
-pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
-    let chunks = Layout::default()
-        //.margin(1)
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3), // Title Header                          0
-            Constraint::Max(6),    // Information                           1
-            Constraint::Max(7),    // Health                                2
-            Constraint::Max(11),   // Statistics, Saving_throws & Skills    3
-            Constraint::Max(10),   // Prof and Language // Background       4
-            Constraint::Min(5),    // Inventory?                            5
-            Constraint::Length(3), // Footer                                6
-        ])
-        .split(frame.area());
-
+pub fn draw_title(frame: &mut Frame, area: Rect) {
     let title_block = Block::default()
         .borders(Borders::ALL)
         .style(Style::default().fg(Color::Green));
@@ -176,9 +162,7 @@ pub fn draw_title(frame: &mut Frame) -> Rc<[Rect]> {
     ))
     .block(title_block.clone());
 
-    frame.render_widget(title, chunks[0]);
-
-    chunks
+    frame.render_widget(title, area);
 }
 
 fn draw_char_info(frame: &mut Frame, area: Rect, app: &mut App) {
@@ -189,12 +173,12 @@ fn draw_char_info(frame: &mut Frame, area: Rect, app: &mut App) {
     frame.render_widget(info_blk.clone(), area);
 
     let inner_info_frame = info_blk.inner(area);
-    let char_info_width = 60;
+    let width = 60;
     let char_info_rows = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(char_info_width + 10), // slot 0
-            Constraint::Length(char_info_width - 10), // slot 1
+            Constraint::Length(width + 10), // slot 0
+            Constraint::Length(width - 10), // slot 1
         ])
         .split(inner_info_frame);
     let info_list = app.char_sheet.information.information_to_list_item();
@@ -356,16 +340,16 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     frame.render_widget(health_blk.clone(), area);
 
     let inner_health_frame = health_blk.inner(area);
-    let health_width = 50;
+    let width = 50;
     let health_rows = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(health_width), // Cur HP/Temp HP/Adjust HP
-            Constraint::Length(14),           // Armor Class
-            Constraint::Length(10),           // Initiative
-            Constraint::Length(15),           // Inspiration
-            Constraint::Length(15),           // Speed
-            Constraint::Length(15),           // Proficiency Bonus
+            Constraint::Length(width), // Cur HP/Temp HP/Adjust HP
+            Constraint::Length(14),    // Armor Class
+            Constraint::Length(10),    // Initiative
+            Constraint::Length(15),    // Inspiration
+            Constraint::Length(15),    // Speed
+            Constraint::Length(15),    // Proficiency Bonus
         ])
         .split(inner_health_frame);
 
@@ -580,7 +564,15 @@ pub fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(tabs, tab_blk.inner(area));
 }
 
-fn draw_profs_bg_tab(frame: &mut Frame, area: Rect, app: &App) {
+// Draw the tabs for:
+//      * Language & Proficiencies
+//      * Backgrounds
+//      * Features & Traits
+//   Eventually:
+//      * Inventory
+//      * Spells
+//      * Notes/Extra?
+fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
     render_tabs(frame, area, app);
 }
 
@@ -593,12 +585,12 @@ fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(info_blk.clone(), area);
 
     let inner_profs_frame = info_blk.inner(area);
-    let prof_and_lang_width = 90;
+    let width = 90;
     // Split the Proficiencies and language area into 2 rows;
     let prof_and_lang_rows = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(prof_and_lang_width), // slot 0
+            Constraint::Length(width), // slot 0
         ])
         .split(inner_profs_frame);
     let info_list = app
@@ -618,12 +610,12 @@ fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(background_blk.clone(), area);
 
     let inner_bg_frame = background_blk.inner(area);
-    let background_width = 120;
+    let width = 120;
     // Split the Proficiencies and language area into 2 rows;
     let prof_and_lang_rows = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(background_width), // slot 0
+            Constraint::Length(width), // slot 0
         ])
         .split(inner_bg_frame);
     let bg_list = app.char_sheet.background.background_to_list_item();
@@ -670,15 +662,30 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
 }
 
 pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
-    let chunks = draw_title(frame);
+    let chunks = Layout::default()
+        .margin(1)
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Title Header                          0
+            Constraint::Max(6),    // Information                           1
+            Constraint::Max(7),    // Health                                2
+            Constraint::Max(11),   // Statistics, Saving_throws & Skills    3
+            Constraint::Max(10),   // Prof and Language // Background       4
+            Constraint::Min(5),    // Inventory?                            5
+            Constraint::Length(3), // Footer                                6
+        ])
+        .split(frame.area());
 
-    // chunks[0] is reserved for the Title of the Application
+    let title_chunk = chunks[0];
     let info_chunk = chunks[1];
     let health_chunk = chunks[2];
     let stats_chunk = chunks[3];
-    let prof_n_bg_chunk = chunks[4]; // Proficiency & Language || Background Tab
-    let _inventory = chunks[5];
+    let tabs_chunk = chunks[4]; // Proficiency & Language || Background Tab
+
+    //let _inventory = chunks[5];
     let footer_chunk = chunks[chunks.len() - 1]; // 6
+
+    draw_title(frame, title_chunk);
 
     draw_char_info(frame, info_chunk, app);
 
@@ -693,13 +700,7 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed/Proficiency Bonus
     draw_health(frame, health_chunk, app, view_state);
 
-    draw_profs_bg_tab(frame, prof_n_bg_chunk, app);
-    //if app.sel_tab_bck_grnd == SelectedTabBackGround::ProfLangTab {
-    //    draw_profs(frame, prof_n_bg_chunk, app);
-    //} else if app.sel_tab_bck_grnd == SelectedTabBackGround::BackgroundTab {
-    //    //draw_background(frame, background, app);
-    //    draw_background(frame, prof_n_bg_chunk, app);
-    //}
+    draw_tabs(frame, tabs_chunk, app);
 
     draw_footer(frame, footer_chunk, app);
 }
