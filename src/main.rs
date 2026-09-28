@@ -1,5 +1,8 @@
+use crate::io::BufReader;
 use clap::Parser;
+use classes::CharSheet;
 use ratatui::layout::Rect;
+use std::fs::File;
 use std::process::Command;
 use std::{error::Error, io};
 
@@ -17,9 +20,14 @@ use ratatui::{
 };
 
 mod app;
+//mod classes;
+use classes::parse_char_sheet;
 mod ui;
 use crate::{
-    app::{App, CurrentScreen, HealthView, Hover, InspirationView, ViewState},
+    app::{
+        App, CurrentScreen, HealthHover, HealthView, InspirationView, RestHover, RestView,
+        ViewState,
+    },
     ui::ui,
 };
 
@@ -34,6 +42,7 @@ struct Args {
     version: bool, // Truly optional
 }
 
+#[allow(clippy::needless_late_init)]
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
@@ -58,6 +67,55 @@ fn main() -> Result<(), Box<dyn Error>> {
         json_file_provided = true;
     }
 
+    let mut view_state: ViewState = ViewState {
+        health: HealthView {
+            minus_rect: Rect::new(0, 0, 0, 0),
+            plus_rect: Rect::new(0, 0, 0, 0),
+            hover: HealthHover::None,
+        },
+        rest: RestView {
+            short_rest_rect: Rect::new(3, 2, 2, 0),
+            long_rest_rect: Rect::new(10, 7, 7, 1),
+            hover: RestHover::None,
+        },
+        inspiration: InspirationView {
+            inspiration_toggle: Rect::new(0, 0, 0, 0),
+        },
+    };
+
+    let file = match File::open(&json_file) {
+        Ok(file) => file,
+        Err(err) => {
+            eprintln!("Failed to open file: {err}");
+            return Ok(());
+        }
+    };
+
+    let reader = BufReader::new(file);
+    let char_sheet: CharSheet;
+
+    match parse_char_sheet(reader) {
+        Ok(character) => {
+            char_sheet = character;
+        }
+        Err(err) => {
+            eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+            return Ok(());
+        }
+    }
+
+    let mut app;
+    if json_file_provided {
+        // create app and run it
+        app = App::new(json_file.to_string(), char_sheet);
+    } else {
+        // create app and run it
+        app = App::new(
+            "resources/default_sheet.json".to_string(),
+            CharSheet::default(),
+        );
+    }
+
     // setup terminal
     enable_raw_mode()?;
     let mut stderr = io::stderr(); // This is a special case. Normally using stdout is fine
@@ -65,25 +123,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stderr);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut view_state: ViewState = ViewState {
-        health: HealthView {
-            minus_rect: Rect::new(0, 0, 0, 0),
-            plus_rect: Rect::new(0, 0, 0, 0),
-            hover: Hover::None,
-        },
-        inspiration: InspirationView {
-            inspiration_toggle: Rect::new(0, 0, 0, 0),
-        },
-    };
-
-    let mut app;
-    if json_file_provided {
-        // create app and run it
-        app = App::new(json_file.to_string());
-    } else {
-        // create app and run it
-        app = App::new("resources/default_sheet.json".to_string());
-    }
     let res = run_app(&mut terminal, &mut app, &mut view_state);
 
     // restore terminal
@@ -111,6 +150,8 @@ enum Action {
     Quit,
     HpIncrease,
     HpDecrease,
+    ShortRest,
+    LongRest,
     InspirationToggle,
     NextTab,
     PrevTab,
@@ -150,11 +191,17 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
 
         Event::Mouse(mouse) if matches!(mouse.kind, MouseEventKind::Up(MouseButton::Left)) => {
             if rect_contains(view_state.health.minus_rect, mouse.column, mouse.row) {
-                view_state.health.hover = Hover::Minus;
+                view_state.health.hover = HealthHover::Minus;
                 Action::HpDecrease
             } else if rect_contains(view_state.health.plus_rect, mouse.column, mouse.row) {
-                view_state.health.hover = Hover::Plus;
+                view_state.health.hover = HealthHover::Plus;
                 Action::HpIncrease
+            } else if rect_contains(view_state.rest.short_rest_rect, mouse.column, mouse.row) {
+                view_state.rest.hover = RestHover::Long;
+                Action::ShortRest
+            } else if rect_contains(view_state.rest.long_rest_rect, mouse.column, mouse.row) {
+                view_state.rest.hover = RestHover::Long;
+                Action::LongRest
             } else if rect_contains(
                 view_state.inspiration.inspiration_toggle,
                 mouse.column,
@@ -162,7 +209,7 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
             ) {
                 Action::InspirationToggle
             } else {
-                view_state.health.hover = Hover::None;
+                view_state.health.hover = HealthHover::None;
                 Action::None
             }
         }
@@ -177,6 +224,12 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
         Action::HpIncrease => app.char_sheet.health.increase(),
         Action::HpDecrease => {
             app.char_sheet.health.decrease();
+        }
+        Action::ShortRest => {
+            app.char_sheet.health.short_rest();
+        }
+        Action::LongRest => {
+            app.char_sheet.health.long_rest();
         }
         Action::InspirationToggle => {
             app.char_sheet.statistics.insp_toggle();
@@ -258,7 +311,12 @@ mod tests {
             health: HealthView {
                 minus_rect: Rect::new(0, 0, 0, 0),
                 plus_rect: Rect::new(10, 5, 5, 1),
-                hover: Hover::None,
+                hover: HealthHover::None,
+            },
+            rest: RestView {
+                short_rest_rect: Rect::new(3, 2, 2, 0),
+                long_rest_rect: Rect::new(10, 7, 7, 1),
+                hover: RestHover::None,
             },
             inspiration: InspirationView {
                 inspiration_toggle: Rect::new(0, 0, 0, 0),
@@ -283,7 +341,9 @@ mod tests {
             health: HealthView {
                 minus_rect: Rect::new(10, 5, 5, 1),
                 plus_rect: Rect::new(0, 0, 0, 0),
-                hover: Hover::None,
+                short_rest_rect: Rect::new(3, 2, 2, 0),
+                long_rest_rect: Rect::new(10, 7, 7, 1),
+                hover: HealthHover::None,
             },
             inspiration: InspirationView {
                 inspiration_toggle: Rect::new(0, 0, 0, 0),
@@ -308,7 +368,12 @@ mod tests {
             health: HealthView {
                 minus_rect: Rect::new(0, 0, 0, 0),
                 plus_rect: Rect::new(0, 0, 0, 0),
-                hover: Hover::None,
+                hover: HealthHover::None,
+            },
+            rest: RestView {
+                short_rest_rect: Rect::new(3, 2, 2, 0),
+                long_rest_rect: Rect::new(10, 7, 7, 1),
+                hover: RestHover::None,
             },
             inspiration: InspirationView {
                 inspiration_toggle: Rect::new(10, 5, 5, 1),

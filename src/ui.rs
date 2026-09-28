@@ -7,7 +7,18 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::{App, CurrentScreen, Hover, SavingThrowView, SkillsView, StatView, ViewState};
+use crate::app::{App, CurrentScreen, HealthHover, RestHover, ViewState};
+/*
+   pub information: Information,
+   pub statistics: Statistics,
+   pub saving_throws: SavingThrows,
+   pub skills: Skills,
+   pub proficiencies_and_language: ProficienciesAndLanguage,
+   pub health: Health,
+   pub background: Background,
+   pub classes: Character, //pub traits: Traits,
+*/
+use classes::{SavingThrowView, SkillsView, StatView};
 use strum::FromRepr;
 
 const HP_LAYOUT_IDX: usize = 0;
@@ -258,7 +269,7 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
     }
 
     // Render the stats 2 per row and modifiers here:
-    for (stat, chunk) in stats_sv.into_iter().skip(2).zip(row2_chunks.iter()) {
+    for (stat, chunk) in stats_sv.into_iter().skip(2).take(2).zip(row2_chunks.iter()) {
         render_stat(frame, stat, *chunk);
     }
 
@@ -363,6 +374,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
             Constraint::Length(hp_length),
             Constraint::Length(hp_length),
             Constraint::Length(hp_length),
+            Constraint::Length(hp_length),
         ])
         .split(hp_inner);
 
@@ -416,7 +428,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     view_state.health.minus_rect = health_controls[0];
     view_state.health.plus_rect = health_controls[2];
 
-    let minus_style = if matches!(view_state.health.hover, Hover::Minus) {
+    let minus_style = if matches!(view_state.health.hover, HealthHover::Minus) {
         Style::default()
             .fg(Color::Green)
             .add_modifier(Modifier::REVERSED)
@@ -424,7 +436,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         Style::default().add_modifier(Modifier::REVERSED)
     };
 
-    let plus_style = if matches!(view_state.health.hover, Hover::Plus) {
+    let plus_style = if matches!(view_state.health.hover, HealthHover::Plus) {
         Style::default()
             .fg(Color::Green)
             .add_modifier(Modifier::REVERSED)
@@ -450,6 +462,49 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
             .style(plus_style),
         health_controls[2],
     );
+
+    ////// Start short rest and long rest button
+
+    let rest_control = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(12), // short rest?
+            Constraint::Length(12), // long rest?
+        ])
+        .split(hp_rows[3]);
+
+    view_state.rest.short_rest_rect = rest_control[0];
+    view_state.rest.long_rest_rect = rest_control[1];
+
+    let sr_style = if matches!(view_state.rest.hover, RestHover::Short) {
+        Style::default().fg(Color::Green)
+    } else {
+        Style::default().add_modifier(Modifier::REVERSED)
+    };
+
+    let lr_style = if matches!(view_state.rest.hover, RestHover::Long) {
+        Style::default()
+            .fg(Color::Green)
+            .add_modifier(Modifier::REVERSED)
+    } else {
+        Style::default().add_modifier(Modifier::REVERSED)
+    };
+
+    frame.render_widget(
+        Paragraph::new("Short Rest?")
+            .alignment(Alignment::Center)
+            .style(sr_style),
+        rest_control[0],
+    );
+
+    frame.render_widget(
+        Paragraph::new("Long Rest?")
+            .alignment(Alignment::Center)
+            .style(lr_style),
+        rest_control[1],
+    );
+
+    /////// end short rest and long rest button code
 
     let armor_blk = Block::default().borders(Borders::ALL).title("Armor Class");
     let armor_inner = armor_blk.inner(health_rows[AC_LAYOUT_IDX]);
@@ -703,7 +758,7 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
         .constraints([
             Constraint::Length(3), // Title Header                          0
             Constraint::Max(6),    // Information                           1
-            Constraint::Max(7),    // Health                                2
+            Constraint::Max(9),    // Health                                2
             Constraint::Max(11),   // Statistics, Saving_throws & Skills    3
             Constraint::Max(10),   // Prof and Language // Background       4
             Constraint::Min(5),    // Inventory?                            5

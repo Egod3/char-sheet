@@ -78,6 +78,7 @@
     "current_hp": 0,
     "maximum_hp": 10,
     "temporary_hp": 0,
+    "short_rests": 1,
     "hit_dice_type": "d6",
     "total_hit_dice": 6,
     "current_hit_dice": 6,
