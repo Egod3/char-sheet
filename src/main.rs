@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut json_file: String = "".to_string();
     let mut json_file_provided = false;
     if let Some(in_json_name) = args.json_file {
-        println!("Value for json_file:{}", in_json_name);
+        //println!("Value for json_file:{}", in_json_name);
 
         json_file = in_json_name;
         json_file_provided = true;
