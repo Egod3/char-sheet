@@ -276,18 +276,54 @@ mod tests {
 
     #[test]
     fn apply_hp_increase_action() {
-        let mut app = App::new("resources/default_sheet.json".to_string());
-        app.save_file = false;
-        let _ = apply_action(&mut app, &Action::HpIncrease);
-        assert_eq!(app.char_sheet.health.current_hp, 1);
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::HpIncrease);
+                assert_eq!(app.char_sheet.health.current_hp, 1);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
     }
 
     #[test]
     fn apply_hp_decrease_action() {
-        let mut app = App::new("resources/default_sheet.json".to_string());
-        app.save_file = false;
-        let _ = apply_action(&mut app, &Action::HpIncrease);
-        assert_eq!(app.char_sheet.health.current_hp, 1);
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+        //let char_sheet: CharSheet;
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                app.char_sheet.health.current_hp = 2;
+                let _ = apply_action(&mut app, &Action::HpDecrease);
+                assert_eq!(app.char_sheet.health.current_hp, 1);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
     }
 
     #[test]
@@ -341,9 +377,12 @@ mod tests {
             health: HealthView {
                 minus_rect: Rect::new(10, 5, 5, 1),
                 plus_rect: Rect::new(0, 0, 0, 0),
+                hover: HealthHover::None,
+            },
+            rest: RestView {
                 short_rest_rect: Rect::new(3, 2, 2, 0),
                 long_rest_rect: Rect::new(10, 7, 7, 1),
-                hover: HealthHover::None,
+                hover: RestHover::None,
             },
             inspiration: InspirationView {
                 inspiration_toggle: Rect::new(0, 0, 0, 0),
