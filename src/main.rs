@@ -268,6 +268,7 @@ fn run_app<B: Backend>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ui::SelectedTabBackGround;
     use ratatui::crossterm::event::{
         Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
     };
