@@ -275,6 +275,32 @@ mod tests {
     use ratatui::layout::Rect;
 
     #[test]
+    fn apply_quit_action() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let ret = apply_action(&mut app, &Action::Quit);
+                //println!("ret: {}", ret);
+                assert_eq!(ret, false);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
     fn apply_hp_increase_action() {
         let file = match File::open("resources/default_sheet.json") {
             Ok(file) => file,
@@ -318,6 +344,119 @@ mod tests {
                 app.char_sheet.health.current_hp = 2;
                 let _ = apply_action(&mut app, &Action::HpDecrease);
                 assert_eq!(app.char_sheet.health.current_hp, 1);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_hp_increase_action_test_temp_hp() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                app.char_sheet.health.current_hp = app.char_sheet.health.maximum_hp;
+                let _ = apply_action(&mut app, &Action::HpIncrease);
+                let _ = apply_action(&mut app, &Action::HpIncrease);
+                let _ = apply_action(&mut app, &Action::HpIncrease);
+                let _ = apply_action(&mut app, &Action::HpIncrease);
+                assert_eq!(app.char_sheet.health.temporary_hp, 4);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_hp_decrease_action_test_temp_hp() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+        //let char_sheet: CharSheet;
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                app.char_sheet.health.current_hp = app.char_sheet.health.maximum_hp;
+                app.char_sheet.health.temporary_hp = 3;
+                let _ = apply_action(&mut app, &Action::HpDecrease);
+                let _ = apply_action(&mut app, &Action::HpDecrease);
+                let _ = apply_action(&mut app, &Action::HpDecrease);
+                assert_eq!(app.char_sheet.health.temporary_hp, 0);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_next_tab_action() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+        //let char_sheet: CharSheet;
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::NextTab);
+                assert_eq!(app.sel_tab_bck_grnd, SelectedTabBackGround::BackgroundTab);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_prev_tab_action() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+        //let char_sheet: CharSheet;
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::NextTab);
+                let _ = apply_action(&mut app, &Action::NextTab);
+                let _ = apply_action(&mut app, &Action::PrevTab);
+                assert_eq!(app.sel_tab_bck_grnd, SelectedTabBackGround::ProfLangTab);
             }
             Err(err) => {
                 eprintln!("Failed to parse JSON file (it may be malformed): {err}");

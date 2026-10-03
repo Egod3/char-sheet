@@ -28,7 +28,7 @@ const INITIATIVE_LAYOUT_IDX: usize = 3;
 const INSPIRATION_LAYOUT_IDX: usize = 4;
 const PROFICIENCY_BONUS_LAYOUT_IDX: usize = 5;
 
-#[derive(Default, Clone, Copy, FromRepr, PartialEq)]
+#[derive(Debug, Default, Clone, Copy, FromRepr, PartialEq)]
 pub enum SelectedTabBackGround {
     #[default]
     ProfLangTab,
