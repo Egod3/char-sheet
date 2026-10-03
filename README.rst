@@ -14,13 +14,13 @@ Build and Run
 
 - To execute the application run ``cargo run`` or ``./target/debug/char-sheet``::
 
-  $ cargo run
-  $ ./target/debug/char-sheet
+  $ cargo run -- --json-file <path to json char sheet>
+  $ ./target/debug/char-sheet -- --json-file <path to json char sheet>
 
 Test
 ****
 
-- <TODO: Add test section>
+- To execute the tests run ``cargo test``.
 
 Updating this file
 ******************
