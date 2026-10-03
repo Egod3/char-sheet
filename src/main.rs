@@ -291,7 +291,6 @@ mod tests {
                 let mut app = App::new("resources/default_sheet.json".to_string(), character);
                 app.save_file = false;
                 let ret = apply_action(&mut app, &Action::Quit);
-                //println!("ret: {}", ret);
                 assert_eq!(ret, false);
             }
             Err(err) => {
@@ -336,7 +335,6 @@ mod tests {
             }
         };
         let reader = BufReader::new(file);
-        //let char_sheet: CharSheet;
 
         match parse_char_sheet(reader) {
             Ok(character) => {
@@ -392,7 +390,6 @@ mod tests {
             }
         };
         let reader = BufReader::new(file);
-        //let char_sheet: CharSheet;
 
         match parse_char_sheet(reader) {
             Ok(character) => {
@@ -422,7 +419,6 @@ mod tests {
             }
         };
         let reader = BufReader::new(file);
-        //let char_sheet: CharSheet;
 
         match parse_char_sheet(reader) {
             Ok(character) => {
@@ -448,7 +444,6 @@ mod tests {
             }
         };
         let reader = BufReader::new(file);
-        //let char_sheet: CharSheet;
 
         match parse_char_sheet(reader) {
             Ok(character) => {
@@ -482,6 +477,96 @@ mod tests {
     }
 
     #[test]
+    fn pressing_l_returns_prev_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('l'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::NextTab));
+    }
+
+    #[test]
+    fn pressing_h_returns_prev_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('h'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::PrevTab));
+    }
+
+    #[test]
+    fn pressing_i_returns_inspiration_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('i'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::InspirationToggle));
+    }
+
+    #[test]
+    fn pressing_plus_returns_inspiration_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('+'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::HpIncrease));
+    }
+
+    #[test]
+    fn pressing_minus_returns_inspiration_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('-'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::HpDecrease));
+    }
+
+    #[test]
+    fn pressing_e_returns_inspiration_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('e'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::EditChunk));
+    }
+
+    #[test]
     fn clicking_plus_returns_hp_increase() {
         let mut view_state: ViewState = ViewState {
             health: HealthView {
@@ -512,7 +597,7 @@ mod tests {
     }
 
     #[test]
-    fn clicking_plus_returns_hp_decrease() {
+    fn clicking_minus_returns_hp_decrease() {
         let mut view_state: ViewState = ViewState {
             health: HealthView {
                 minus_rect: Rect::new(10, 5, 5, 1),
