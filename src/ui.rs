@@ -191,11 +191,16 @@ fn draw_char_info(frame: &mut Frame, area: Rect, app: &mut App) {
             Constraint::Length(width - 10), // slot 1
         ])
         .split(inner_info_frame);
-    let info_list = app.char_sheet.information.information_to_list_item();
+    let string_vec = app.char_sheet.information.information_to_vec();
+
+    let mut info: Vec<ListItem> = vec![];
+    for item in string_vec.into_iter() {
+        info.push(ListItem::new(item));
+    }
     let char_info_row_len = 4;
 
-    let char_info_items_zero: Vec<ListItem> = info_list[0..char_info_row_len].to_vec();
-    let char_info_items_one: Vec<ListItem> = info_list[char_info_row_len..info_list.len()].to_vec();
+    let char_info_items_zero: Vec<ListItem> = info[0..char_info_row_len].to_vec();
+    let char_info_items_one: Vec<ListItem> = info[char_info_row_len..info.len()].to_vec();
 
     frame.render_widget(List::new(char_info_items_zero), char_info_rows[0]);
     frame.render_widget(List::new(char_info_items_one), char_info_rows[1]);
@@ -365,7 +370,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
     let hp_blk = Block::default().borders(Borders::ALL).title("HP");
     let hp_inner = hp_blk.inner(health_rows[HP_LAYOUT_IDX]);
-    frame.render_widget(&hp_blk, health_rows[HP_LAYOUT_IDX]);
+    frame.render_widget(hp_blk, health_rows[HP_LAYOUT_IDX]);
 
     let hp_length = 1;
     let hp_rows = Layout::default()
@@ -513,7 +518,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         .constraints([Constraint::Length(10)])
         .split(armor_inner);
 
-    frame.render_widget(&armor_blk, health_rows[AC_LAYOUT_IDX]);
+    frame.render_widget(armor_blk, health_rows[AC_LAYOUT_IDX]);
 
     let armor = Paragraph::new(Line::from(vec![Span::styled(
         format!(" {}", app.char_sheet.health.armor_class),
@@ -530,7 +535,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         .constraints([Constraint::Length(8)])
         .split(speed_inner);
 
-    frame.render_widget(&speed_blk, health_rows[SPEED_LAYOUT_IDX]);
+    frame.render_widget(speed_blk, health_rows[SPEED_LAYOUT_IDX]);
     let speed = Paragraph::new(Line::from(vec![Span::styled(
         format!(" {} ft.", app.char_sheet.health.speed),
         Style::default().add_modifier(Modifier::BOLD),
@@ -545,7 +550,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         .constraints([Constraint::Length(15)])
         .split(initiative_inner);
 
-    frame.render_widget(&initiative_blk, health_rows[INITIATIVE_LAYOUT_IDX]);
+    frame.render_widget(initiative_blk, health_rows[INITIATIVE_LAYOUT_IDX]);
     let initiative = Paragraph::new(Line::from(vec![Span::styled(
         format!(" {}", app.char_sheet.health.initiative),
         Style::default().add_modifier(Modifier::BOLD),
@@ -563,7 +568,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         .constraints([Constraint::Length(15)])
         .split(inspiration_inner);
 
-    frame.render_widget(&inspiration_blk, health_rows[INSPIRATION_LAYOUT_IDX]);
+    frame.render_widget(inspiration_blk, health_rows[INSPIRATION_LAYOUT_IDX]);
     let symbol = if app.char_sheet.statistics.inspiration {
         "●".to_string()
     } else {
@@ -585,7 +590,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         .split(proficiency_bonus_inner);
 
     frame.render_widget(
-        &proficiency_bonus_blk,
+        proficiency_bonus_blk,
         health_rows[PROFICIENCY_BONUS_LAYOUT_IDX],
     );
     let proficiency_bonus = Paragraph::new(Line::from(vec![Span::styled(
@@ -649,12 +654,17 @@ fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
             Constraint::Length(width), // slot 0
         ])
         .split(inner_profs_frame);
-    let info_list = app
+    let string_vec = app
         .char_sheet
         .proficiencies_and_language
         .profs_and_lang_to_list_item();
 
-    frame.render_widget(List::new(info_list[..].to_vec()), prof_and_lang_rows[0]);
+    let mut prof_and_lang: Vec<ListItem> = vec![];
+    for item in string_vec.into_iter() {
+        prof_and_lang.push(ListItem::new(item));
+    }
+
+    frame.render_widget(List::new(prof_and_lang), prof_and_lang_rows[0]);
 }
 
 fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
@@ -674,24 +684,16 @@ fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
             Constraint::Length(width), // slot 0
         ])
         .split(inner_bg_frame);
-    let bg_list = app.char_sheet.background.background_to_list_item();
+    let string_vec = app.char_sheet.background.background_to_list_item();
 
-    frame.render_widget(List::new(bg_list[..].to_vec()), prof_and_lang_rows[0]);
+    let mut background: Vec<ListItem> = vec![];
+    for item in string_vec.into_iter() {
+        background.push(ListItem::new(item));
+    }
+
+    frame.render_widget(List::new(background), prof_and_lang_rows[0]);
 }
 
-// // WIP: TODO: I need to figure out how to represent the Classes.
-//          One option is this:
-//          pub struct Class {
-//              primary_class: Class,
-//              primary_sub_class: SubClass,
-//              secondary_class: Class,
-//              secondary_sub_class: SubClass,
-//              level_primary: u8,
-//              level_secondary: u8,
-//          }
-//          And then just encode all of the class logic into the game code
-//          and put the data into the char sheet.json and load it for each char.
-//
 // fn draw_feat_n_trait(frame: &mut Frame, area: Rect, app: &App) {
 //     let title_feat = "Features & Traits";
 //     let blk = Block::default()
