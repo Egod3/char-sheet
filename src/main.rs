@@ -570,6 +570,7 @@ mod tests {
     fn clicking_plus_returns_hp_increase() {
         let mut view_state: ViewState = ViewState {
             health: HealthView {
+                //  Rect::new(x, y, width, height)
                 minus_rect: Rect::new(0, 0, 0, 0),
                 plus_rect: Rect::new(10, 5, 5, 1),
                 hover: HealthHover::None,
@@ -586,7 +587,7 @@ mod tests {
 
         let event = Event::Mouse(MouseEvent {
             kind: MouseEventKind::Up(MouseButton::Left),
-            column: 12,
+            column: 10,
             row: 5,
             modifiers: KeyModifiers::NONE,
         });
@@ -616,7 +617,7 @@ mod tests {
 
         let event = Event::Mouse(MouseEvent {
             kind: MouseEventKind::Up(MouseButton::Left),
-            column: 12,
+            column: 10,
             row: 5,
             modifiers: KeyModifiers::NONE,
         });
@@ -635,8 +636,8 @@ mod tests {
                 hover: HealthHover::None,
             },
             rest: RestView {
-                short_rest_rect: Rect::new(3, 2, 2, 0),
-                long_rest_rect: Rect::new(10, 7, 7, 1),
+                short_rest_rect: Rect::new(0, 0, 0, 0),
+                long_rest_rect: Rect::new(0, 0, 0, 0),
                 hover: RestHover::None,
             },
             inspiration: InspirationView {
@@ -646,7 +647,7 @@ mod tests {
 
         let event = Event::Mouse(MouseEvent {
             kind: MouseEventKind::Up(MouseButton::Left),
-            column: 12,
+            column: 10,
             row: 5,
             modifiers: KeyModifiers::NONE,
         });
@@ -654,5 +655,65 @@ mod tests {
         let action = handle_event(event, &mut view_state);
 
         assert!(matches!(action, Action::InspirationToggle));
+    }
+
+    #[test]
+    fn clicking_short_rest_button() {
+        let mut view_state: ViewState = ViewState {
+            health: HealthView {
+                minus_rect: Rect::new(0, 0, 0, 0),
+                plus_rect: Rect::new(0, 0, 0, 0),
+                hover: HealthHover::None,
+            },
+            rest: RestView {
+                short_rest_rect: Rect::new(3, 2, 2, 1),
+                long_rest_rect: Rect::new(10, 7, 7, 1),
+                hover: RestHover::None,
+            },
+            inspiration: InspirationView {
+                inspiration_toggle: Rect::new(0, 0, 0, 0),
+            },
+        };
+
+        let event = Event::Mouse(MouseEvent {
+            kind: MouseEventKind::Up(MouseButton::Left),
+            column: 3,
+            row: 2,
+            modifiers: KeyModifiers::NONE,
+        });
+
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::ShortRest));
+    }
+
+    #[test]
+    fn clicking_long_rest_button() {
+        let mut view_state: ViewState = ViewState {
+            health: HealthView {
+                minus_rect: Rect::new(0, 0, 0, 0),
+                plus_rect: Rect::new(0, 0, 0, 0),
+                hover: HealthHover::None,
+            },
+            rest: RestView {
+                short_rest_rect: Rect::new(3, 2, 2, 0),
+                long_rest_rect: Rect::new(10, 7, 7, 1),
+                hover: RestHover::None,
+            },
+            inspiration: InspirationView {
+                inspiration_toggle: Rect::new(0, 0, 0, 0),
+            },
+        };
+
+        let event = Event::Mouse(MouseEvent {
+            kind: MouseEventKind::Up(MouseButton::Left),
+            column: 10,
+            row: 7,
+            modifiers: KeyModifiers::NONE,
+        });
+
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::LongRest));
     }
 }
