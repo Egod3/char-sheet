@@ -480,6 +480,86 @@ mod tests {
     }
 
     #[test]
+    fn apply_prev_tab_action_test_feat_trait() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::NextTab);
+                let _ = apply_action(&mut app, &Action::NextTab);
+                assert_eq!(app.sel_tab_bck_grnd, SelectedTabBackGround::FeatTrait);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_char_classes_scroll_up_action() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::CharClassesScrollUp);
+                assert_eq!(app.char_classes_scroll_offset, 1);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_char_classes_scroll_down_action() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::CharClassesScrollUp);
+                let _ = apply_action(&mut app, &Action::CharClassesScrollUp);
+                let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
+                let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
+                let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
+                assert_eq!(app.char_classes_scroll_offset, 0);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
     fn pressing_q_returns_quit_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
@@ -582,6 +662,36 @@ mod tests {
         let action = handle_event(event, &mut view_state);
 
         assert!(matches!(action, Action::EditChunk));
+    }
+
+    #[test]
+    fn pressing_j_returns_char_class_scroll_up_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('j'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::CharClassesScrollUp));
+    }
+
+    #[test]
+    fn phessing_k_returns_char_class_scroll_up_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('k'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::CharClassesScrollDown));
     }
 
     #[test]
