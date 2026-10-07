@@ -3,7 +3,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span, Text},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs, Wrap},
     Frame,
 };
 
@@ -31,9 +31,9 @@ const PROFICIENCY_BONUS_LAYOUT_IDX: usize = 5;
 #[derive(Debug, Default, Clone, Copy, FromRepr, PartialEq)]
 pub enum SelectedTabBackGround {
     #[default]
-    ProfLangTab,
-    BackgroundTab,
-    //FeatTraitTab,
+    ProfLang,
+    Background,
+    FeatTrait,
 }
 
 impl SelectedTabBackGround {
@@ -102,8 +102,8 @@ impl SelectedTabBackGround {
 
     const fn palette(self) -> tailwind::Palette {
         match self {
-            Self::ProfLangTab => tailwind::BLUE,
-            Self::BackgroundTab => tailwind::EMERALD,
+            Self::ProfLang => tailwind::BLUE,
+            Self::Background => tailwind::EMERALD,
         }
     }
 }
@@ -601,30 +601,6 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 }
 
 /// Render the tabs.
-pub fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
-    let tab_blk = Block::default()
-        .borders(Borders::ALL)
-        .style(Style::default().fg(Color::Green));
-    frame.render_widget(tab_blk.clone(), area);
-
-    match app.sel_tab_bck_grnd {
-        SelectedTabBackGround::ProfLangTab => draw_profs(frame, tab_blk.inner(area), app),
-        SelectedTabBackGround::BackgroundTab => draw_background(frame, tab_blk.inner(area), app),
-        //SelectedTabBackGround::FeatTraitTab => draw_feat_n_trait(frame, tab_blk.inner(area), app),
-        //SelectedTabBackGround::FeatTraitTab => {}
-    }
-
-    let title_prof = "Proficiencies & Languages";
-    let title_bg = "Backgound";
-    let tabs = Tabs::new(vec![title_prof, title_bg])
-        //.style(Style::default().fg(Color::Red))
-        .highlight_style(Style::default().green().on_black().bold())
-        .select(app.sel_tab_bck_grnd as usize)
-        .divider(symbols::DOT)
-        .padding("<-", "->");
-    frame.render_widget(tabs, tab_blk.inner(area));
-}
-
 // Draw the tabs for:
 //      * Language & Proficiencies
 //      * Backgrounds
@@ -634,7 +610,27 @@ pub fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
 //      * Spells
 //      * Notes/Extra?
 fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
-    render_tabs(frame, area, app);
+    let tab_blk = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::Green));
+    frame.render_widget(tab_blk.clone(), area);
+
+    match app.sel_tab_bck_grnd {
+        SelectedTabBackGround::ProfLang => draw_profs(frame, tab_blk.inner(area), app),
+        SelectedTabBackGround::Background => draw_background(frame, tab_blk.inner(area), app),
+        SelectedTabBackGround::FeatTrait => draw_feat_n_trait(frame, tab_blk.inner(area), app),
+    }
+
+    let title_prof = "Proficiencies & Languages";
+    let title_bg = "Backgound";
+    let title_features = "Features";
+    let tabs = Tabs::new(vec![title_prof, title_bg, title_features])
+        //.style(Style::default().fg(Color::Red))
+        .highlight_style(Style::default().green().on_black().bold())
+        .select(app.sel_tab_bck_grnd as usize)
+        .divider(symbols::DOT)
+        .padding("<-", "->");
+    frame.render_widget(tabs, tab_blk.inner(area));
 }
 
 fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
@@ -657,7 +653,7 @@ fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
     let string_vec = app
         .char_sheet
         .proficiencies_and_language
-        .profs_and_lang_to_list_item();
+        .profs_and_lang_to_vec();
 
     let mut prof_and_lang: Vec<ListItem> = vec![];
     for item in string_vec.into_iter() {
@@ -684,7 +680,7 @@ fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
             Constraint::Length(width), // slot 0
         ])
         .split(inner_bg_frame);
-    let string_vec = app.char_sheet.background.background_to_list_item();
+    let string_vec = app.char_sheet.background.background_to_vec();
 
     let mut background: Vec<ListItem> = vec![];
     for item in string_vec.into_iter() {
@@ -694,26 +690,31 @@ fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(List::new(background), prof_and_lang_rows[0]);
 }
 
-// fn draw_feat_n_trait(frame: &mut Frame, area: Rect, app: &App) {
-//     let title_feat = "Features & Traits";
-//     let blk = Block::default()
-//         .borders(Borders::ALL)
-//         .title(title_feat)
-//         .style(Style::default().fg(Color::Green));
-//     frame.render_widget(blk.clone(), area);
-//
-//     let inner_frame = blk.inner(area);
-//     let width = 120;
-//     let rows = Layout::default()
-//         .direction(Direction::Horizontal)
-//         .constraints([
-//             Constraint::Length(width), // slot 0
-//         ])
-//         .split(inner_frame);
-//     let list = app.char_sheet.features.features_to_list_item();
-//
-//     frame.render_widget(List::new(list[..].to_vec()), rows[0]);
-// }
+fn draw_feat_n_trait(frame: &mut Frame, area: Rect, app: &App) {
+    let title_feat = "Features & Traits";
+    let blk = Block::default()
+        .borders(Borders::ALL)
+        .title(title_feat)
+        .style(Style::default().fg(Color::Green));
+    frame.render_widget(blk.clone(), area);
+
+    let inner_frame = blk.inner(area);
+    let width = 120;
+    let rows = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Length(width), // slot 0
+        ])
+        .split(inner_frame);
+    let rage_text = app.char_sheet.character.classes[0].class_text();
+
+    let lines: Vec<Line> = rage_text.into_iter().map(Line::from).collect();
+    let rage_paragraph = Paragraph::new(lines)
+        .wrap(Wrap { trim: true })
+        .scroll((app.char_classes_scroll_offset, 0));
+
+    frame.render_widget(rage_paragraph, rows[0]);
+}
 
 fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
     /*
@@ -758,13 +759,13 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
         .margin(1)
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3), // Title Header                          0
-            Constraint::Max(6),    // Information                           1
-            Constraint::Max(9),    // Health                                2
-            Constraint::Max(11),   // Statistics, Saving_throws & Skills    3
-            Constraint::Max(10),   // Prof and Language // Background       4
-            Constraint::Min(5),    // Inventory?                            5
-            Constraint::Length(3), // Footer                                6
+            Constraint::Length(3), // Title Header                                          0
+            Constraint::Max(6),    // Information                                           1
+            Constraint::Max(9),    // (HP ) Health                                          2
+            Constraint::Max(11),   // (Abilities) Statistics, Saving_throws & Skills        3
+            Constraint::Max(10),   // Prof and Language // Background // Features & Traits  4
+            Constraint::Min(5),    // Inventory?                                            5
+            Constraint::Length(3), // Footer                                                6
         ])
         .split(frame.area());
 

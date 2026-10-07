@@ -75,6 +75,7 @@ pub struct App {
     pub char_sheet: CharSheet,
     pub json_file_name: String,
     pub save_file: bool,
+    pub char_classes_scroll_offset: u16,
     // SelectedTab_BackGround or st_bg
     pub sel_tab_bck_grnd: SelectedTabBackGround,
 }
@@ -85,8 +86,9 @@ impl App {
             current_screen: CurrentScreen::Main,
             char_sheet,
             json_file_name: json_file.clone(),
+            char_classes_scroll_offset: 0,
             save_file: true,
-            sel_tab_bck_grnd: SelectedTabBackGround::ProfLangTab,
+            sel_tab_bck_grnd: SelectedTabBackGround::ProfLang,
         }
     }
 
