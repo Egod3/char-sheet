@@ -70,12 +70,18 @@ pub enum CurrEditInformation {
 }
 
 #[derive(Default)]
+pub struct CharClassParagraph {
+    pub vert_scroll_offset: u16,
+    pub max_scroll_lines: u16,
+}
+
+#[derive(Default)]
 pub struct App {
     pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
     pub char_sheet: CharSheet,
     pub json_file_name: String,
     pub save_file: bool,
-    pub char_classes_scroll_offset: u16,
+    pub char_class_para: CharClassParagraph,
     // SelectedTab_BackGround or st_bg
     pub sel_tab_bck_grnd: SelectedTabBackGround,
 }
@@ -86,7 +92,12 @@ impl App {
             current_screen: CurrentScreen::Main,
             char_sheet,
             json_file_name: json_file.clone(),
-            char_classes_scroll_offset: 0,
+            char_class_para: CharClassParagraph {
+                vert_scroll_offset: 0,
+                // TODO: figure out how to calculate this based on the text in the paragraph
+                // and update this value at the time of opening the json file.
+                max_scroll_lines: 15,
+            },
             save_file: true,
             sel_tab_bck_grnd: SelectedTabBackGround::ProfLang,
         }

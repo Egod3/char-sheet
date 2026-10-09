@@ -245,11 +245,17 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
         }
         Action::CharClassesScrollUp => {
             // Increment to scroll down, ideally capping it at your maximum lines
-            app.char_classes_scroll_offset = app.char_classes_scroll_offset.saturating_add(1);
+            app.char_class_para.vert_scroll_offset =
+                app.char_class_para.vert_scroll_offset.saturating_add(1);
+            // Avoid scrolling down forever
+            if app.char_class_para.vert_scroll_offset > app.char_class_para.max_scroll_lines {
+                app.char_class_para.vert_scroll_offset = app.char_class_para.max_scroll_lines;
+            }
         }
         Action::CharClassesScrollDown => {
             // Decrement to scroll up
-            app.char_classes_scroll_offset = app.char_classes_scroll_offset.saturating_sub(1);
+            app.char_class_para.vert_scroll_offset =
+                app.char_class_para.vert_scroll_offset.saturating_sub(1);
         }
         Action::Quit => return false,
         // TODO: add support to edit each of the text area's that make sense to allow the user to
@@ -520,8 +526,9 @@ mod tests {
             Ok(character) => {
                 let mut app = App::new("resources/default_sheet.json".to_string(), character);
                 app.save_file = false;
+                app.char_class_para.max_scroll_lines = 5;
                 let _ = apply_action(&mut app, &Action::CharClassesScrollUp);
-                assert_eq!(app.char_classes_scroll_offset, 1);
+                assert_eq!(app.char_class_para.vert_scroll_offset, 1);
             }
             Err(err) => {
                 eprintln!("Failed to parse JSON file (it may be malformed): {err}");
@@ -550,7 +557,7 @@ mod tests {
                 let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
                 let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
                 let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
-                assert_eq!(app.char_classes_scroll_offset, 0);
+                assert_eq!(app.char_class_para.vert_scroll_offset, 0);
             }
             Err(err) => {
                 eprintln!("Failed to parse JSON file (it may be malformed): {err}");

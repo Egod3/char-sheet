@@ -3,7 +3,10 @@ use ratatui::{
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span, Text},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Tabs, Wrap},
+    widgets::{
+        Block, Borders, List, ListItem, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Tabs, Wrap,
+    },
     Frame,
 };
 
@@ -711,7 +714,18 @@ fn draw_feat_n_trait(frame: &mut Frame, area: Rect, app: &App) {
     let lines: Vec<Line> = rage_text.into_iter().map(Line::from).collect();
     let rage_paragraph = Paragraph::new(lines)
         .wrap(Wrap { trim: true })
-        .scroll((app.char_classes_scroll_offset, 0));
+        .scroll((app.char_class_para.vert_scroll_offset, 0));
+
+    // Track the scrollbar's state
+    let mut scrollbar_state = ScrollbarState::new(app.char_class_para.max_scroll_lines.into())
+        .position(app.char_class_para.vert_scroll_offset as usize);
+
+    // Render the scrollbar on top of the same area
+    frame.render_stateful_widget(
+        Scrollbar::new(ScrollbarOrientation::VerticalRight),
+        area,
+        &mut scrollbar_state,
+    );
 
     frame.render_widget(rage_paragraph, rows[0]);
 }
