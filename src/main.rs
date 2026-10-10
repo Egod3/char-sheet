@@ -1,4 +1,5 @@
 use crate::io::BufReader;
+use crate::ui::SelectedTabBackGround;
 use clap::Parser;
 use classes::CharSheet;
 use ratatui::layout::Rect;
@@ -156,8 +157,8 @@ enum Action {
     NextTab,
     PrevTab,
     EditChunk, // use w/ "selected_chunk" state and we can represent editing each chunk we have
-    CharClassesScrollUp,
-    CharClassesScrollDown,
+    ScrollUp,
+    ScrollDown,
     None,
 }
 
@@ -192,10 +193,10 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
         }
 
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('j') => {
-            Action::CharClassesScrollUp
+            Action::ScrollUp
         }
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('k') => {
-            Action::CharClassesScrollDown
+            Action::ScrollDown
         }
 
         Event::Mouse(mouse) if matches!(mouse.kind, MouseEventKind::Up(MouseButton::Left)) => {
@@ -243,19 +244,23 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
         Action::InspirationToggle => {
             app.char_sheet.statistics.insp_toggle();
         }
-        Action::CharClassesScrollUp => {
-            // Increment to scroll down, ideally capping it at your maximum lines
-            app.char_class_para.vert_scroll_offset =
-                app.char_class_para.vert_scroll_offset.saturating_add(1);
-            // Avoid scrolling down forever
-            if app.char_class_para.vert_scroll_offset > app.char_class_para.max_scroll_lines {
-                app.char_class_para.vert_scroll_offset = app.char_class_para.max_scroll_lines;
+        Action::ScrollUp => {
+            if app.sel_tab_bck_grnd == SelectedTabBackGround::FeatTrait {
+                // Increment to scroll down, ideally capping it at your maximum lines
+                app.char_class_para.vert_scroll_offset =
+                    app.char_class_para.vert_scroll_offset.saturating_add(1);
+                // Avoid scrolling down forever
+                if app.char_class_para.vert_scroll_offset > app.char_class_para.max_scroll_lines {
+                    app.char_class_para.vert_scroll_offset = app.char_class_para.max_scroll_lines;
+                }
             }
         }
-        Action::CharClassesScrollDown => {
-            // Decrement to scroll up
-            app.char_class_para.vert_scroll_offset =
-                app.char_class_para.vert_scroll_offset.saturating_sub(1);
+        Action::ScrollDown => {
+            if app.sel_tab_bck_grnd == SelectedTabBackGround::FeatTrait {
+                // Decrement to scroll up
+                app.char_class_para.vert_scroll_offset =
+                    app.char_class_para.vert_scroll_offset.saturating_sub(1);
+            }
         }
         Action::Quit => return false,
         // TODO: add support to edit each of the text area's that make sense to allow the user to
@@ -527,7 +532,8 @@ mod tests {
                 let mut app = App::new("resources/default_sheet.json".to_string(), character);
                 app.save_file = false;
                 app.char_class_para.max_scroll_lines = 5;
-                let _ = apply_action(&mut app, &Action::CharClassesScrollUp);
+                app.sel_tab_bck_grnd = SelectedTabBackGround::FeatTrait;
+                let _ = apply_action(&mut app, &Action::ScrollUp);
                 assert_eq!(app.char_class_para.vert_scroll_offset, 1);
             }
             Err(err) => {
@@ -552,11 +558,12 @@ mod tests {
             Ok(character) => {
                 let mut app = App::new("resources/default_sheet.json".to_string(), character);
                 app.save_file = false;
-                let _ = apply_action(&mut app, &Action::CharClassesScrollUp);
-                let _ = apply_action(&mut app, &Action::CharClassesScrollUp);
-                let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
-                let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
-                let _ = apply_action(&mut app, &Action::CharClassesScrollDown);
+                app.sel_tab_bck_grnd = SelectedTabBackGround::FeatTrait;
+                let _ = apply_action(&mut app, &Action::ScrollUp);
+                let _ = apply_action(&mut app, &Action::ScrollUp);
+                let _ = apply_action(&mut app, &Action::ScrollDown);
+                let _ = apply_action(&mut app, &Action::ScrollDown);
+                let _ = apply_action(&mut app, &Action::ScrollDown);
                 assert_eq!(app.char_class_para.vert_scroll_offset, 0);
             }
             Err(err) => {
@@ -683,7 +690,7 @@ mod tests {
         let mut view_state = ViewState::default();
         let action = handle_event(event, &mut view_state);
 
-        assert!(matches!(action, Action::CharClassesScrollUp));
+        assert!(matches!(action, Action::ScrollUp));
     }
 
     #[test]
@@ -698,7 +705,7 @@ mod tests {
         let mut view_state = ViewState::default();
         let action = handle_event(event, &mut view_state);
 
-        assert!(matches!(action, Action::CharClassesScrollDown));
+        assert!(matches!(action, Action::ScrollDown));
     }
 
     #[test]
