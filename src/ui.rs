@@ -1,11 +1,11 @@
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
     style::{Color, Modifier, Style},
     symbols,
     text::{Line, Span, Text},
     widgets::{
-        Block, Borders, List, ListItem, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
-        Tabs, Wrap,
+        Block, Borders, Clear, List, ListItem, Paragraph, Scrollbar, ScrollbarOrientation,
+        ScrollbarState, Tabs, Wrap,
     },
     Frame,
 };
@@ -476,7 +476,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
     let temp_hp = Paragraph::new(Line::from(vec![
         Span::raw("Temp: "),
-        Span::styled(temp_text, Style::default().add_modifier(Modifier::DIM)),
+        Span::styled(temp_text, Style::default()),
     ]))
     .alignment(Alignment::Right);
 
@@ -812,8 +812,14 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
 
     let current_keys_hint = {
         match app.current_screen {
-            CurrentScreen::Main => Span::styled("(q) to quit", Style::default().fg(Color::Red)),
-            CurrentScreen::Exiting => Span::styled("(q) to quit", Style::default().fg(Color::Red)),
+            CurrentScreen::Main => Span::styled(
+                "(?) to show help (Esc) to close help (q) to quit ",
+                Style::default().fg(app.text_color.get_primary_color()),
+            ),
+            CurrentScreen::Exiting => Span::styled(
+                "(?) to show help (Esc) to close help (q) to quit",
+                Style::default().fg(Color::Red),
+            ),
         }
     };
 
@@ -827,6 +833,50 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
 
     frame.render_widget(mode_footer, footer_chunks[0]);
     frame.render_widget(key_notes_footer, footer_chunks[1]);
+}
+
+fn draw_help(frame: &mut Frame, app: &App) {
+    // Support a '?' page that is an overlay over the app to show the key map
+    if app.show_help {
+        let overlay_area = get_centered_rect(frame.area(), 60, 40);
+
+        // ALWAYS render the Clear widget first to wipe the background cells
+        frame.render_widget(Clear, overlay_area);
+
+        // 3. Render your overlay panel content (e.g., a modal dialog box)
+        let overlay_panel = Paragraph::new(format!(
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n\n{}",
+            "Movement:",
+            "The 'h' key is used to move the tab Left",
+            "The 'j' key is used to move text w/ in a tab Down",
+            "The 'k' key is used to move text w/ in a tab Up",
+            "The 'l' key is used to move the tab Right",
+            "Health",
+            "The '+' key is used to add 1 HP",
+            "The '-' key is used to remove 1 HP",
+            "Other:",
+            "The 'c' key is used to switch text color",
+            "The 'q' key is used to quit the application",
+            "The '?' key is used to show this menu",
+            "Press 'Esc' to close",
+        ))
+        .alignment(Alignment::Left)
+        .style(Style::default().fg(app.text_color.get_primary_color()))
+        .block(Block::bordered().title("Keymap Help"));
+
+        frame.render_widget(overlay_panel, overlay_area);
+    }
+}
+
+fn get_centered_rect(root_area: Rect, percent_x: u16, percent_y: u16) -> Rect {
+    let horizontal_layout =
+        Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
+    let vertical_layout = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
+
+    let [centered_horizontal] = horizontal_layout.areas(root_area);
+    let [final_centered_area] = vertical_layout.areas(centered_horizontal);
+
+    final_centered_area
 }
 
 pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
@@ -869,4 +919,6 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     draw_tabs(frame, tabs_chunk, app);
 
     draw_footer(frame, footer_chunk, app);
+
+    draw_help(frame, app);
 }

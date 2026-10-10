@@ -85,6 +85,7 @@ pub struct App {
     //pub primary_text_color: Color,
     //pub secondary_text_color: Color,
     pub text_color: SelectedTextColor,
+    pub show_help: bool,
 }
 
 impl App {
@@ -102,6 +103,7 @@ impl App {
             save_file: true,
             sel_tab_bck_grnd: SelectedTabBackGround::ProfLang,
             text_color: SelectedTextColor::GreenLightRed,
+            show_help: false,
         }
     }
 

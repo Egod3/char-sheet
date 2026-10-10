@@ -160,6 +160,8 @@ enum Action {
     ScrollUp,
     ScrollDown,
     ToggleTextColor,
+    ShowHelp,
+    HideHelp,
     None,
 }
 
@@ -203,6 +205,14 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
 
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('c') => {
             Action::ToggleTextColor
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('?') => {
+            Action::ShowHelp
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Esc => {
+            Action::HideHelp
         }
 
         Event::Mouse(mouse) if matches!(mouse.kind, MouseEventKind::Up(MouseButton::Left)) => {
@@ -270,6 +280,12 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
         }
         Action::ToggleTextColor => {
             app.text_color = app.text_color.next_color();
+        }
+        Action::ShowHelp => {
+            app.show_help = true;
+        }
+        Action::HideHelp => {
+            app.show_help = false;
         }
         Action::Quit => return false,
         // TODO: add support to edit each of the text area's that make sense to allow the user to
