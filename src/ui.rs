@@ -777,9 +777,8 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
             Constraint::Max(6),    // Information                                           1
             Constraint::Max(9),    // (HP ) Health                                          2
             Constraint::Max(11),   // (Abilities) Statistics, Saving_throws & Skills        3
-            Constraint::Max(10),   // Prof and Language // Background // Features & Traits  4
-            Constraint::Min(5),    // Inventory?                                            5
-            Constraint::Length(3), // Footer                                                6
+            Constraint::Max(18),   // Prof and Language // Background // Features & Traits  4
+            Constraint::Length(3), // Footer                                                5
         ])
         .split(frame.area());
 
@@ -789,8 +788,7 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     let stats_chunk = chunks[3];
     let tabs_chunk = chunks[4]; // Proficiency & Language || Background Tab
 
-    //let _inventory = chunks[5];
-    let footer_chunk = chunks[chunks.len() - 1]; // 6
+    let footer_chunk = chunks[chunks.len() - 1]; // 5
 
     draw_title(frame, title_chunk);
 
