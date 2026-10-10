@@ -305,7 +305,7 @@ fn run_app<B: Backend>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ui::SelectedTabBackGround;
+    use crate::ui::{SelectedTabBackGround, SelectedTextColor};
     use ratatui::crossterm::event::{
         Event, KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers,
     };
@@ -583,6 +583,112 @@ mod tests {
     }
 
     #[test]
+    fn apply_toggle_color_action() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                assert_eq!(app.text_color, SelectedTextColor::MagentaYellow);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_toggle_color_action_one() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                assert_eq!(app.text_color, SelectedTextColor::DarkGrayLightMagenta);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_toggle_color_action_two() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                assert_eq!(app.text_color, SelectedTextColor::LightYellowCyan);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_toggle_color_action_three() {
+        let file = match File::open("resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                let _ = apply_action(&mut app, &Action::ToggleTextColor);
+                assert_eq!(app.text_color, SelectedTextColor::GreenLightRed);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
     fn pressing_q_returns_quit_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
@@ -643,7 +749,7 @@ mod tests {
     }
 
     #[test]
-    fn pressing_plus_returns_inspiration_action() {
+    fn pressing_plus_returns_hp_increase_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('+'),
             kind: KeyEventKind::Press,
@@ -658,7 +764,7 @@ mod tests {
     }
 
     #[test]
-    fn pressing_minus_returns_inspiration_action() {
+    fn pressing_minus_returns_hp_decrease_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('-'),
             kind: KeyEventKind::Press,
@@ -673,7 +779,7 @@ mod tests {
     }
 
     #[test]
-    fn pressing_e_returns_inspiration_action() {
+    fn pressing_e_returns_edit_chunk_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('e'),
             kind: KeyEventKind::Press,
@@ -703,7 +809,7 @@ mod tests {
     }
 
     #[test]
-    fn phessing_k_returns_char_class_scroll_up_action() {
+    fn pressing_k_returns_char_class_scroll_up_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('k'),
             kind: KeyEventKind::Press,
@@ -715,6 +821,21 @@ mod tests {
         let action = handle_event(event, &mut view_state);
 
         assert!(matches!(action, Action::ScrollDown));
+    }
+
+    #[test]
+    fn pressing_c_returns_toggle_text_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('c'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::ToggleTextColor));
     }
 
     #[test]
