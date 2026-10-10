@@ -112,7 +112,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         // create app and run it
         app = App::new(
-            "resources/default_sheet.json".to_string(),
+            "classes/resources/default_sheet.json".to_string(),
             CharSheet::default(),
         );
     }
@@ -314,7 +314,7 @@ mod tests {
 
     #[test]
     fn apply_quit_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -325,7 +325,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let ret = apply_action(&mut app, &Action::Quit);
                 assert_eq!(ret, false);
@@ -339,7 +342,7 @@ mod tests {
 
     #[test]
     fn apply_hp_increase_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -350,7 +353,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::HpIncrease);
                 assert_eq!(app.char_sheet.health.current_hp, 1);
@@ -364,7 +370,7 @@ mod tests {
 
     #[test]
     fn apply_hp_decrease_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -375,7 +381,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 app.char_sheet.health.current_hp = 2;
                 let _ = apply_action(&mut app, &Action::HpDecrease);
@@ -390,7 +399,7 @@ mod tests {
 
     #[test]
     fn apply_hp_increase_action_test_temp_hp() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -401,7 +410,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 app.char_sheet.health.current_hp = app.char_sheet.health.maximum_hp;
                 let _ = apply_action(&mut app, &Action::HpIncrease);
@@ -419,7 +431,7 @@ mod tests {
 
     #[test]
     fn apply_hp_decrease_action_test_temp_hp() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -430,7 +442,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 app.char_sheet.health.current_hp = app.char_sheet.health.maximum_hp;
                 app.char_sheet.health.temporary_hp = 3;
@@ -448,7 +463,7 @@ mod tests {
 
     #[test]
     fn apply_next_tab_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -459,7 +474,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::NextTab);
                 assert_eq!(app.sel_tab_bck_grnd, SelectedTabBackGround::Background);
@@ -473,7 +491,7 @@ mod tests {
 
     #[test]
     fn apply_prev_tab_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -484,7 +502,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::NextTab);
                 let _ = apply_action(&mut app, &Action::NextTab);
@@ -501,7 +522,7 @@ mod tests {
 
     #[test]
     fn apply_prev_tab_action_test_feat_trait() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -512,7 +533,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::NextTab);
                 let _ = apply_action(&mut app, &Action::NextTab);
@@ -527,7 +551,7 @@ mod tests {
 
     #[test]
     fn apply_char_classes_scroll_up_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -538,7 +562,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 app.char_class_para.max_scroll_lines = 5;
                 app.sel_tab_bck_grnd = SelectedTabBackGround::FeatTrait;
@@ -554,7 +581,7 @@ mod tests {
 
     #[test]
     fn apply_char_classes_scroll_down_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -565,7 +592,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 app.sel_tab_bck_grnd = SelectedTabBackGround::FeatTrait;
                 let _ = apply_action(&mut app, &Action::ScrollUp);
@@ -584,7 +614,7 @@ mod tests {
 
     #[test]
     fn apply_toggle_color_action() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -595,7 +625,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::ToggleTextColor);
                 assert_eq!(app.text_color, SelectedTextColor::MagentaYellow);
@@ -609,7 +642,7 @@ mod tests {
 
     #[test]
     fn apply_toggle_color_action_one() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -620,7 +653,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::ToggleTextColor);
                 let _ = apply_action(&mut app, &Action::ToggleTextColor);
@@ -635,7 +671,7 @@ mod tests {
 
     #[test]
     fn apply_toggle_color_action_two() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -646,7 +682,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::ToggleTextColor);
                 let _ = apply_action(&mut app, &Action::ToggleTextColor);
@@ -662,7 +701,7 @@ mod tests {
 
     #[test]
     fn apply_toggle_color_action_three() {
-        let file = match File::open("resources/default_sheet.json") {
+        let file = match File::open("classes/resources/default_sheet.json") {
             Ok(file) => file,
             Err(err) => {
                 eprintln!("Failed to open file: {err}");
@@ -673,7 +712,10 @@ mod tests {
 
         match parse_char_sheet(reader) {
             Ok(character) => {
-                let mut app = App::new("resources/default_sheet.json".to_string(), character);
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
                 app.save_file = false;
                 let _ = apply_action(&mut app, &Action::ToggleTextColor);
                 let _ = apply_action(&mut app, &Action::ToggleTextColor);
