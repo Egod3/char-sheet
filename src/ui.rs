@@ -31,6 +31,46 @@ const INITIATIVE_LAYOUT_IDX: usize = 3;
 const INSPIRATION_LAYOUT_IDX: usize = 4;
 const PROFICIENCY_BONUS_LAYOUT_IDX: usize = 5;
 
+#[derive(Debug, Default, Clone, FromRepr, Copy, PartialEq)]
+pub enum SelectedTextColor {
+    #[default]
+    GreenLightRed,
+    MagentaYellow,
+    DarkGrayLightMagenta,
+    LightYellowCyan,
+}
+
+impl SelectedTextColor {
+    /// Get the next color, if there is no next color wrap around.
+    pub fn next_color(self) -> Self {
+        let current_index = self as usize;
+        let mut next_index = current_index + 1;
+        // Allow this to wrap around so the user doesn't have to use 2 keys to change this
+        if next_index > SelectedTextColor::LightYellowCyan as usize {
+            next_index = 0;
+        }
+        Self::from_repr(next_index).unwrap_or(self)
+    }
+
+    pub fn get_primary_color(self) -> Color {
+        match self {
+            SelectedTextColor::GreenLightRed => Color::Green,
+            SelectedTextColor::MagentaYellow => Color::Magenta,
+            SelectedTextColor::DarkGrayLightMagenta => Color::DarkGray,
+            SelectedTextColor::LightYellowCyan => Color::LightYellow,
+        }
+    }
+
+    pub fn get_secondary_color(self) -> Color {
+        match self {
+            SelectedTextColor::GreenLightRed => Color::LightRed,
+            SelectedTextColor::MagentaYellow => Color::Yellow,
+            SelectedTextColor::DarkGrayLightMagenta => Color::LightMagenta,
+            SelectedTextColor::LightYellowCyan => Color::Cyan,
+        }
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy, FromRepr, PartialEq)]
 pub enum SelectedTabBackGround {
     #[default]
@@ -112,33 +152,33 @@ impl SelectedTabBackGround {
 }
 */
 
-fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect) {
+fn render_stat(frame: &mut Frame, stat: StatView, area: ratatui::layout::Rect, app: &App) {
     let modifier_style = if stat.modifier >= 0 {
-        Style::default().fg(Color::Green)
+        Style::default().fg(app.text_color.get_primary_color())
     } else {
-        Style::default().fg(Color::Red)
+        Style::default().fg(app.text_color.get_secondary_color())
     };
     let lines = vec![Line::from(vec![
         Span::styled(format!("{:+} ", stat.modifier), modifier_style),
         Span::styled(
             format!("({:})", stat.value),
-            Style::default().fg(Color::Green),
+            Style::default().fg(app.text_color.get_primary_color()),
         ),
     ])];
 
     let paragraph = Paragraph::new(lines)
         .block(Block::default().borders(Borders::ALL).title(stat.name))
         .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
 
     frame.render_widget(paragraph, area);
 }
 
-fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect) {
+fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect, app: &App) {
     let value_style = if st.value >= 0 {
-        Style::default().fg(Color::Green)
+        Style::default().fg(app.text_color.get_primary_color())
     } else {
-        Style::default().fg(Color::Red)
+        Style::default().fg(app.text_color.get_secondary_color())
     };
 
     let line = Line::from(vec![
@@ -150,11 +190,11 @@ fn render_saving_throw(frame: &mut Frame, st: SavingThrowView, area: Rect) {
     frame.render_widget(Paragraph::new(line), area);
 }
 
-fn skill_to_list_item(skill: &SkillsView) -> ListItem<'static> {
+fn skill_to_list_item(skill: &SkillsView, pos_color: Color, neg_color: Color) -> ListItem<'static> {
     let skill_style = if skill.value >= 0 {
-        Style::default().fg(Color::Green)
+        Style::default().fg(pos_color)
     } else {
-        Style::default().fg(Color::Red)
+        Style::default().fg(neg_color)
     };
     ListItem::new(Line::from(vec![
         Span::raw(format!("{} ", skill.sp.symbol())),
@@ -163,15 +203,15 @@ fn skill_to_list_item(skill: &SkillsView) -> ListItem<'static> {
     ]))
 }
 
-pub fn draw_title(frame: &mut Frame, area: Rect) {
+pub fn draw_title(frame: &mut Frame, area: Rect, app: &App) {
     let title_block = Block::default()
         .borders(Borders::ALL)
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
 
     // Create paragraph for base app
     let title = Paragraph::new(Text::styled(
         "D&D Character Sheet",
-        Style::default().fg(Color::Green),
+        Style::default().fg(app.text_color.get_primary_color()),
     ))
     .block(title_block.clone());
 
@@ -182,7 +222,7 @@ fn draw_char_info(frame: &mut Frame, area: Rect, app: &mut App) {
     let info_blk = Block::default()
         .borders(Borders::ALL)
         .title("Character Information")
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
     frame.render_widget(info_blk.clone(), area);
 
     let inner_info_frame = info_blk.inner(area);
@@ -213,7 +253,7 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
     let stats_blk = Block::default()
         .borders(Borders::ALL)
         .title("Abilities")
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
     frame.render_widget(stats_blk.clone(), area);
 
     let stats_sv = app.char_sheet.statistics.ability_scores();
@@ -273,17 +313,17 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
 
     // Render the stats 2 per row and modifiers here:
     for (stat, chunk) in stats_sv.into_iter().take(2).zip(row1_chunks.iter()) {
-        render_stat(frame, stat, *chunk);
+        render_stat(frame, stat, *chunk, app);
     }
 
     // Render the stats 2 per row and modifiers here:
     for (stat, chunk) in stats_sv.into_iter().skip(2).take(2).zip(row2_chunks.iter()) {
-        render_stat(frame, stat, *chunk);
+        render_stat(frame, stat, *chunk, app);
     }
 
     // Render the stats 2 per row and modifiers here:
     for (stat, chunk) in stats_sv.into_iter().skip(4).zip(row3_chunks.iter()) {
-        render_stat(frame, stat, *chunk);
+        render_stat(frame, stat, *chunk, app);
     }
 
     let saving_throws = app
@@ -305,7 +345,7 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_widget(sav_thr_blk, ability_chunks[1]);
 
     for (st, row) in saving_throws.into_iter().zip(svn_thr_rows.iter()) {
-        render_saving_throw(frame, st, *row);
+        render_saving_throw(frame, st, *row, app);
     }
 
     let skills_blk = Block::default().borders(Borders::ALL).title("Skills");
@@ -330,18 +370,36 @@ fn draw_abilities(frame: &mut Frame, area: Rect, app: &App) {
     let skills_items_zero: Vec<ListItem> = skills_views
         .iter()
         .take(skills_row_size)
-        .map(skill_to_list_item)
+        .map(|skill| {
+            skill_to_list_item(
+                skill,
+                app.text_color.get_primary_color(),
+                app.text_color.get_secondary_color(),
+            )
+        })
         .collect();
     let skills_items_one: Vec<ListItem> = skills_views
         .iter()
         .skip(skills_row_size)
         .take(skills_row_size)
-        .map(skill_to_list_item)
+        .map(|skill| {
+            skill_to_list_item(
+                skill,
+                app.text_color.get_primary_color(),
+                app.text_color.get_secondary_color(),
+            )
+        })
         .collect();
     let skills_items_two: Vec<ListItem> = skills_views
         .iter()
         .skip(skills_row_size * 2)
-        .map(skill_to_list_item)
+        .map(|skill| {
+            skill_to_list_item(
+                skill,
+                app.text_color.get_primary_color(),
+                app.text_color.get_secondary_color(),
+            )
+        })
         .collect();
 
     frame.render_widget(List::new(skills_items_zero), skills_rows[0]);
@@ -353,7 +411,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     let health_blk = Block::default()
         .borders(Borders::ALL)
         .title("")
-        .style(Style::default().fg(Color::Yellow));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
 
     frame.render_widget(health_blk.clone(), area);
 
@@ -438,7 +496,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
     let minus_style = if matches!(view_state.health.hover, HealthHover::Minus) {
         Style::default()
-            .fg(Color::Green)
+            .fg(app.text_color.get_primary_color())
             .add_modifier(Modifier::REVERSED)
     } else {
         Style::default().add_modifier(Modifier::REVERSED)
@@ -446,7 +504,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
     let plus_style = if matches!(view_state.health.hover, HealthHover::Plus) {
         Style::default()
-            .fg(Color::Green)
+            .fg(app.text_color.get_primary_color())
             .add_modifier(Modifier::REVERSED)
     } else {
         Style::default().add_modifier(Modifier::REVERSED)
@@ -485,14 +543,14 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     view_state.rest.long_rest_rect = rest_control[1];
 
     let sr_style = if matches!(view_state.rest.hover, RestHover::Short) {
-        Style::default().fg(Color::Green)
+        Style::default().fg(app.text_color.get_primary_color())
     } else {
         Style::default().add_modifier(Modifier::REVERSED)
     };
 
     let lr_style = if matches!(view_state.rest.hover, RestHover::Long) {
         Style::default()
-            .fg(Color::Green)
+            .fg(app.text_color.get_primary_color())
             .add_modifier(Modifier::REVERSED)
     } else {
         Style::default().add_modifier(Modifier::REVERSED)
@@ -615,7 +673,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
     let tab_blk = Block::default()
         .borders(Borders::ALL)
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
     frame.render_widget(tab_blk.clone(), area);
 
     match app.sel_tab_bck_grnd {
@@ -628,7 +686,7 @@ fn draw_tabs(frame: &mut Frame, area: Rect, app: &App) {
     let title_bg = "Backgound";
     let title_features = "Features";
     let tabs = Tabs::new(vec![title_prof, title_bg, title_features])
-        //.style(Style::default().fg(Color::Red))
+        .style(Style::default().fg(app.text_color.get_primary_color()))
         .highlight_style(Style::default().green().on_black().bold())
         .select(app.sel_tab_bck_grnd as usize)
         .divider(symbols::DOT)
@@ -641,7 +699,7 @@ fn draw_profs(frame: &mut Frame, area: Rect, app: &App) {
     let info_blk = Block::default()
         .borders(Borders::ALL)
         .title(title_prof)
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
     frame.render_widget(info_blk.clone(), area);
 
     let inner_profs_frame = info_blk.inner(area);
@@ -671,7 +729,7 @@ fn draw_background(frame: &mut Frame, area: Rect, app: &App) {
     let background_blk = Block::default()
         .borders(Borders::ALL)
         .title(title_bg)
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
     frame.render_widget(background_blk.clone(), area);
 
     let inner_bg_frame = background_blk.inner(area);
@@ -698,11 +756,11 @@ fn draw_feat_n_trait(frame: &mut Frame, area: Rect, app: &App) {
     let blk = Block::default()
         .borders(Borders::ALL)
         .title(title_feat)
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(app.text_color.get_primary_color()));
     frame.render_widget(blk.clone(), area);
 
     let inner_frame = blk.inner(area);
-    let width = 120;
+    let width = 2160;
     let rows = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -740,7 +798,10 @@ fn draw_footer(frame: &mut Frame, area: Rect, app: &App) {
     let current_navigation_text = vec![
         // The first half of the text
         match app.current_screen {
-            CurrentScreen::Main => Span::styled("View Mode", Style::default().fg(Color::Green)),
+            CurrentScreen::Main => Span::styled(
+                "View Mode",
+                Style::default().fg(app.text_color.get_primary_color()),
+            ),
             CurrentScreen::Exiting => Span::styled("Exiting", Style::default().fg(Color::LightRed)),
         }
         .to_owned(),
@@ -790,7 +851,7 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
 
     let footer_chunk = chunks[chunks.len() - 1]; // 5
 
-    draw_title(frame, title_chunk);
+    draw_title(frame, title_chunk, app);
 
     draw_char_info(frame, info_chunk, app);
 

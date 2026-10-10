@@ -159,6 +159,7 @@ enum Action {
     EditChunk, // use w/ "selected_chunk" state and we can represent editing each chunk we have
     ScrollUp,
     ScrollDown,
+    ToggleTextColor,
     None,
 }
 
@@ -195,8 +196,13 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('j') => {
             Action::ScrollUp
         }
+
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('k') => {
             Action::ScrollDown
+        }
+
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('c') => {
+            Action::ToggleTextColor
         }
 
         Event::Mouse(mouse) if matches!(mouse.kind, MouseEventKind::Up(MouseButton::Left)) => {
@@ -261,6 +267,9 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
                 app.char_class_para.vert_scroll_offset =
                     app.char_class_para.vert_scroll_offset.saturating_sub(1);
             }
+        }
+        Action::ToggleTextColor => {
+            app.text_color = app.text_color.next_color();
         }
         Action::Quit => return false,
         // TODO: add support to edit each of the text area's that make sense to allow the user to

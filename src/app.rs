@@ -1,8 +1,6 @@
-use crate::ui::SelectedTabBackGround;
-use ratatui::layout::Rect;
-//use ratatui::widgets::ListItem;
-//use serde::{Deserialize, Serialize};
+use crate::ui::{SelectedTabBackGround, SelectedTextColor};
 use classes::CharSheet;
+use ratatui::layout::Rect;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 
@@ -84,6 +82,9 @@ pub struct App {
     pub char_class_para: CharClassParagraph,
     // SelectedTab_BackGround or st_bg
     pub sel_tab_bck_grnd: SelectedTabBackGround,
+    //pub primary_text_color: Color,
+    //pub secondary_text_color: Color,
+    pub text_color: SelectedTextColor,
 }
 
 impl App {
@@ -100,6 +101,7 @@ impl App {
             },
             save_file: true,
             sel_tab_bck_grnd: SelectedTabBackGround::ProfLang,
+            text_color: SelectedTextColor::GreenLightRed,
         }
     }
 
@@ -110,6 +112,10 @@ impl App {
     pub fn previous_tab(&mut self) {
         self.sel_tab_bck_grnd = self.sel_tab_bck_grnd.previous();
     }
+
+    // pub fn next_color(&mut self) {
+    //     self.sel_tab_bck_grnd = self.sel_tab_bck_grnd.next();
+    // }
 }
 
 impl Drop for App {
