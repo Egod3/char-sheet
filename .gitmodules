@@ -1,3 +1,3 @@
 [submodule "classes"]
 	path = classes
-	url = https://github.com/Egod3/classes
+	url = git@github.com:Egod3/classes
