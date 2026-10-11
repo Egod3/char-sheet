@@ -162,6 +162,8 @@ enum Action {
     ToggleTextColor,
     ShowHelp,
     HideHelp,
+    DeathSave,
+    DeathFail,
     None,
 }
 
@@ -213,6 +215,12 @@ fn handle_event(event: Event, view_state: &mut ViewState) -> Action {
 
         Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Esc => {
             Action::HideHelp
+        }
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('s') => {
+            Action::DeathSave
+        }
+        Event::Key(key) if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('f') => {
+            Action::DeathFail
         }
 
         Event::Mouse(mouse) if matches!(mouse.kind, MouseEventKind::Up(MouseButton::Left)) => {
@@ -286,6 +294,25 @@ fn apply_action(app: &mut App, action: &Action) -> bool {
         }
         Action::HideHelp => {
             app.show_help = false;
+        }
+        Action::DeathSave => {
+            if app.char_sheet.health.current_hp == 0 {
+                app.char_sheet.health.death_save_saves += 1;
+                if app.char_sheet.health.death_save_saves == 3 {
+                    app.char_sheet.health.death_save_saves = 0;
+                    app.char_sheet.health.death_save_fails = 0;
+                    app.char_sheet.health.current_hp = 1;
+                }
+            }
+        }
+        Action::DeathFail => {
+            if app.char_sheet.health.current_hp == 0 && app.char_sheet.health.death_save_fails <= 2
+            {
+                app.char_sheet.health.death_save_fails += 1;
+                if app.char_sheet.health.death_save_fails == 3 {
+                    app.char_sheet.health.current_hp = 0;
+                }
+            }
         }
         Action::Quit => return false,
         // TODO: add support to edit each of the text area's that make sense to allow the user to

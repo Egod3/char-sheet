@@ -433,146 +433,208 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     let hp_inner = hp_blk.inner(health_rows[HP_LAYOUT_IDX]);
     frame.render_widget(hp_blk, health_rows[HP_LAYOUT_IDX]);
 
-    let hp_length = 1;
-    let hp_rows = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(hp_length),
-            Constraint::Length(hp_length),
-            Constraint::Length(hp_length),
-            Constraint::Length(hp_length),
-        ])
-        .split(hp_inner);
+    // TODO:
+    // I am thinking of having the death saves/death fails
+    // be hidden until the player goes to 0 HP then have that replace the HP pane.
+    // I need to think through the use cases and ensure we support
+    // the char dying and being revived and being "down" but able to try death saves.
 
-    let hp_row = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Ratio(2, 3), // current HP (larger)
-            Constraint::Ratio(1, 3), // temp HP (smaller)
-        ])
-        .split(hp_rows[0]);
+    // If HP >= 1
 
-    let current_hp = Paragraph::new(Line::from(vec![
-        Span::raw("Current: "),
-        // TODO: Do I want to show tmp HP as:
-        //       51/50      tmp: 1 this one for new
-        // or    50/50      tmp: 1
-        Span::styled(
-            format!(
-                "{}/{}",
-                app.char_sheet.health.current_hp + app.char_sheet.health.temporary_hp,
-                app.char_sheet.health.maximum_hp
+    if app.char_sheet.health.current_hp >= 1 {
+        let hp_length = 1;
+        let hp_rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(hp_length),
+                Constraint::Length(hp_length),
+                Constraint::Length(hp_length),
+                Constraint::Length(hp_length),
+            ])
+            .split(hp_inner);
+
+        let hp_row = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Ratio(2, 3), // current HP (larger)
+                Constraint::Ratio(1, 3), // temp HP (smaller)
+            ])
+            .split(hp_rows[0]);
+
+        let current_hp = Paragraph::new(Line::from(vec![
+            Span::raw("Current: "),
+            // TODO: Do I want to show tmp HP as:
+            //       51/50      tmp: 1 this one for new
+            // or    50/50      tmp: 1
+            Span::styled(
+                format!(
+                    "{}/{}",
+                    app.char_sheet.health.current_hp + app.char_sheet.health.temporary_hp,
+                    app.char_sheet.health.maximum_hp
+                ),
+                Style::default().add_modifier(Modifier::BOLD),
             ),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-    ]));
+        ]));
 
-    frame.render_widget(current_hp, hp_row[0]);
+        frame.render_widget(current_hp, hp_row[0]);
 
-    let mut temp_text: String = "--".into();
-    if app.char_sheet.health.temporary_hp != 0 {
-        temp_text = app.char_sheet.health.temporary_hp.to_string();
+        let mut temp_text: String = "--".into();
+        if app.char_sheet.health.temporary_hp != 0 {
+            temp_text = app.char_sheet.health.temporary_hp.to_string();
+        }
+
+        let temp_hp = Paragraph::new(Line::from(vec![
+            Span::raw("Temp: "),
+            Span::styled(temp_text, Style::default()),
+        ]))
+        .alignment(Alignment::Right);
+
+        frame.render_widget(temp_hp, hp_row[1]);
+
+        let health_controls = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Length(6), // [-]
+                Constraint::Min(1),    // label
+                Constraint::Length(6), // [+]
+            ])
+            .split(hp_rows[2]);
+
+        view_state.health.minus_rect = health_controls[0];
+        view_state.health.plus_rect = health_controls[2];
+
+        let minus_style = if matches!(view_state.health.hover, HealthHover::Minus) {
+            Style::default()
+                .fg(app.text_color.get_primary_color())
+                .add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default().add_modifier(Modifier::REVERSED)
+        };
+
+        let plus_style = if matches!(view_state.health.hover, HealthHover::Plus) {
+            Style::default()
+                .fg(app.text_color.get_primary_color())
+                .add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default().add_modifier(Modifier::REVERSED)
+        };
+
+        frame.render_widget(
+            Paragraph::new(" [ - ] ")
+                .alignment(Alignment::Center)
+                .style(minus_style),
+            health_controls[0],
+        );
+
+        frame.render_widget(
+            Paragraph::new("Adjust HP").alignment(Alignment::Center),
+            health_controls[1],
+        );
+
+        frame.render_widget(
+            Paragraph::new(" [ + ] ")
+                .alignment(Alignment::Center)
+                .style(plus_style),
+            health_controls[2],
+        );
+
+        ////// Start short rest and long rest button
+
+        let rest_control = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+            ])
+            .split(hp_rows[3]);
+
+        view_state.rest.short_rest_rect = rest_control[0];
+        view_state.rest.long_rest_rect = rest_control[3];
+
+        let sr_style = if matches!(view_state.rest.hover, RestHover::Short) {
+            Style::default().fg(app.text_color.get_primary_color())
+        } else {
+            Style::default().add_modifier(Modifier::REVERSED)
+        };
+
+        let lr_style = if matches!(view_state.rest.hover, RestHover::Long) {
+            Style::default()
+                .fg(app.text_color.get_primary_color())
+                .add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default().add_modifier(Modifier::REVERSED)
+        };
+
+        frame.render_widget(
+            Paragraph::new("Short Rest?")
+                .alignment(Alignment::Left)
+                .style(sr_style),
+            rest_control[0],
+        );
+
+        frame.render_widget(
+            Paragraph::new("Long Rest?")
+                .alignment(Alignment::Right)
+                .style(lr_style),
+            rest_control[3],
+        );
+
+        /////// end short rest and long rest button code
+    } else {
+        // Make the Death Save Failure/Success Menu here
+        let saved = "●".to_string();
+        let open = "○".to_string();
+
+        let mut unconscious_vec = vec![];
+        // TODO: find a less janky way to handle the character being 'dead'
+        if app.char_sheet.health.death_save_fails == 3 {
+            // do nothing
+            unconscious_vec.push("DEAD".to_string());
+            unconscious_vec.push("".to_string());
+        } else {
+            unconscious_vec.push("Unconscious".to_string());
+            unconscious_vec.push("".to_string());
+            if app.char_sheet.health.death_save_saves == 0 {
+                unconscious_vec.push(format!("SUCCESS: {} {} {}", open, open, open));
+            } else if app.char_sheet.health.death_save_saves == 1 {
+                unconscious_vec.push(format!("SUCCESS: {} {} {}", saved, open, open));
+            } else if app.char_sheet.health.death_save_saves == 2 {
+                unconscious_vec.push(format!("SUCCESS: {} {} {}", saved, saved, open));
+            }
+        }
+
+        if app.char_sheet.health.death_save_fails == 0 {
+            unconscious_vec.push(format!("FAILURES: {} {} {}", open, open, open));
+        } else if app.char_sheet.health.death_save_fails == 1 {
+            unconscious_vec.push(format!("FAILURES: {} {} {}", saved, open, open));
+        } else if app.char_sheet.health.death_save_fails == 2 {
+            unconscious_vec.push(format!("FAILURES: {} {} {}", saved, saved, open));
+        } else if app.char_sheet.health.death_save_fails == 3 {
+            unconscious_vec.push("Your character is DEAD. :( :( :( ".to_string());
+        }
+
+        let lines: Vec<ratatui::prelude::Line> = unconscious_vec
+            .iter()
+            .map(|s| ratatui::prelude::Line::from(s.as_str()))
+            .collect();
+
+        let hp_rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(4)])
+            .split(hp_inner);
+
+        let hp_row = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Ratio(2, 3), // current HP (larger)
+                Constraint::Ratio(1, 3), // temp HP (smaller)
+            ])
+            .split(hp_rows[0]);
+
+        frame.render_widget(Paragraph::new(lines), hp_row[0]);
     }
-
-    let temp_hp = Paragraph::new(Line::from(vec![
-        Span::raw("Temp: "),
-        Span::styled(temp_text, Style::default()),
-    ]))
-    .alignment(Alignment::Right);
-
-    frame.render_widget(temp_hp, hp_row[1]);
-
-    let health_controls = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Length(6), // [-]
-            Constraint::Min(1),    // label
-            Constraint::Length(6), // [+]
-        ])
-        .split(hp_rows[2]);
-
-    view_state.health.minus_rect = health_controls[0];
-    view_state.health.plus_rect = health_controls[2];
-
-    let minus_style = if matches!(view_state.health.hover, HealthHover::Minus) {
-        Style::default()
-            .fg(app.text_color.get_primary_color())
-            .add_modifier(Modifier::REVERSED)
-    } else {
-        Style::default().add_modifier(Modifier::REVERSED)
-    };
-
-    let plus_style = if matches!(view_state.health.hover, HealthHover::Plus) {
-        Style::default()
-            .fg(app.text_color.get_primary_color())
-            .add_modifier(Modifier::REVERSED)
-    } else {
-        Style::default().add_modifier(Modifier::REVERSED)
-    };
-
-    frame.render_widget(
-        Paragraph::new(" [ - ] ")
-            .alignment(Alignment::Center)
-            .style(minus_style),
-        health_controls[0],
-    );
-
-    frame.render_widget(
-        Paragraph::new("Adjust HP").alignment(Alignment::Center),
-        health_controls[1],
-    );
-
-    frame.render_widget(
-        Paragraph::new(" [ + ] ")
-            .alignment(Alignment::Center)
-            .style(plus_style),
-        health_controls[2],
-    );
-
-    ////// Start short rest and long rest button
-
-    let rest_control = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
-        .split(hp_rows[3]);
-
-    view_state.rest.short_rest_rect = rest_control[0];
-    view_state.rest.long_rest_rect = rest_control[3];
-
-    let sr_style = if matches!(view_state.rest.hover, RestHover::Short) {
-        Style::default().fg(app.text_color.get_primary_color())
-    } else {
-        Style::default().add_modifier(Modifier::REVERSED)
-    };
-
-    let lr_style = if matches!(view_state.rest.hover, RestHover::Long) {
-        Style::default()
-            .fg(app.text_color.get_primary_color())
-            .add_modifier(Modifier::REVERSED)
-    } else {
-        Style::default().add_modifier(Modifier::REVERSED)
-    };
-
-    frame.render_widget(
-        Paragraph::new("Short Rest?")
-            .alignment(Alignment::Left)
-            .style(sr_style),
-        rest_control[0],
-    );
-
-    frame.render_widget(
-        Paragraph::new("Long Rest?")
-            .alignment(Alignment::Right)
-            .style(lr_style),
-        rest_control[3],
-    );
-
-    /////// end short rest and long rest button code
 
     let armor_blk = Block::default().borders(Borders::ALL).title("Armor Class");
     let armor_inner = armor_blk.inner(health_rows[AC_LAYOUT_IDX]);
@@ -847,7 +909,7 @@ fn draw_help(frame: &mut Frame, app: &App) {
 
         // 3. Render your overlay panel content (e.g., a modal dialog box)
         let overlay_panel = Paragraph::new(format!(
-            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n\n{}",
             "Movement:",
             "The 'h' key is used to move the tab Left",
             "The 'j' key is used to move text w/ in a tab Down",
@@ -856,6 +918,8 @@ fn draw_help(frame: &mut Frame, app: &App) {
             "Health",
             "The '+' key is used to add 1 HP",
             "The '-' key is used to remove 1 HP",
+            "The 's' key is used to add one 'success' during death saves",
+            "The 'f' key is used to add one 'failure' during death saves",
             "Other:",
             "The 'c' key is used to switch text color",
             "The 'q' key is used to quit the application",
@@ -908,12 +972,6 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
     draw_char_info(frame, info_chunk, app);
 
     draw_abilities(frame, stats_chunk, app);
-
-    // TODO:
-    // I am thinking of having the death saves/death fails
-    // be hidden until the player goes to 0 HP then have that replace the HP pane.
-    // I need to think through the use cases and ensure we support
-    // the char dying and being revived and being "down" but able to try death saves.
 
     // Create a Rectangle to display player AC/HP/Temp HP/Initiative/Speed/Proficiency Bonus
     draw_health(frame, health_chunk, app, view_state);
