@@ -455,7 +455,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     let current_hp = Paragraph::new(Line::from(vec![
         Span::raw("Current: "),
         // TODO: Do I want to show tmp HP as:
-        //       51/50      tmp: 1
+        //       51/50      tmp: 1 this one for new
         // or    50/50      tmp: 1
         Span::styled(
             format!(
@@ -534,13 +534,15 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     let rest_control = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(12), // short rest?
-            Constraint::Length(12), // long rest?
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
         ])
         .split(hp_rows[3]);
 
     view_state.rest.short_rest_rect = rest_control[0];
-    view_state.rest.long_rest_rect = rest_control[1];
+    view_state.rest.long_rest_rect = rest_control[3];
 
     let sr_style = if matches!(view_state.rest.hover, RestHover::Short) {
         Style::default().fg(app.text_color.get_primary_color())
@@ -558,16 +560,16 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
     frame.render_widget(
         Paragraph::new("Short Rest?")
-            .alignment(Alignment::Center)
+            .alignment(Alignment::Left)
             .style(sr_style),
         rest_control[0],
     );
 
     frame.render_widget(
         Paragraph::new("Long Rest?")
-            .alignment(Alignment::Center)
+            .alignment(Alignment::Right)
             .style(lr_style),
-        rest_control[1],
+        rest_control[3],
     );
 
     /////// end short rest and long rest button code
@@ -886,7 +888,7 @@ pub fn ui(frame: &mut Frame, app: &mut App, view_state: &mut ViewState) {
         .constraints([
             Constraint::Length(3), // Title Header                                          0
             Constraint::Max(6),    // Information                                           1
-            Constraint::Max(9),    // (HP ) Health                                          2
+            Constraint::Max(8),    // (HP ) Health                                          2
             Constraint::Max(11),   // (Abilities) Statistics, Saving_throws & Skills        3
             Constraint::Max(18),   // Prof and Language // Background // Features & Traits  4
             Constraint::Length(3), // Footer                                                5
