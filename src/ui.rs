@@ -433,14 +433,6 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
     let hp_inner = hp_blk.inner(health_rows[HP_LAYOUT_IDX]);
     frame.render_widget(hp_blk, health_rows[HP_LAYOUT_IDX]);
 
-    // TODO:
-    // I am thinking of having the death saves/death fails
-    // be hidden until the player goes to 0 HP then have that replace the HP pane.
-    // I need to think through the use cases and ensure we support
-    // the char dying and being revived and being "down" but able to try death saves.
-
-    // If HP >= 1
-
     if app.char_sheet.health.current_hp >= 1 {
         let hp_length = 1;
         let hp_rows = Layout::default()
@@ -463,9 +455,6 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
 
         let current_hp = Paragraph::new(Line::from(vec![
             Span::raw("Current: "),
-            // TODO: Do I want to show tmp HP as:
-            //       51/50      tmp: 1 this one for new
-            // or    50/50      tmp: 1
             Span::styled(
                 format!(
                     "{}/{}",
@@ -539,7 +528,6 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         );
 
         ////// Start short rest and long rest button
-
         let rest_control = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
@@ -580,10 +568,9 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
                 .style(lr_style),
             rest_control[3],
         );
-
         /////// end short rest and long rest button code
     } else {
-        // Make the Death Save Failure/Success Menu here
+        // Death Save Failure/Success Menu
         let saved = "●".to_string();
         let open = "○".to_string();
 
@@ -612,7 +599,7 @@ fn draw_health(frame: &mut Frame, area: Rect, app: &App, view_state: &mut ViewSt
         } else if app.char_sheet.health.death_save_fails == 2 {
             unconscious_vec.push(format!("FAILURES: {} {} {}", saved, saved, open));
         } else if app.char_sheet.health.death_save_fails == 3 {
-            unconscious_vec.push("Your character is DEAD. :( :( :( ".to_string());
+            unconscious_vec.push("Your character is DEAD. :( ".to_string());
         }
 
         let lines: Vec<ratatui::prelude::Line> = unconscious_vec
