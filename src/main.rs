@@ -747,6 +747,63 @@ mod tests {
     }
 
     #[test]
+    fn apply_show_help_action() {
+        let file = match File::open("classes/resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::ShowHelp);
+                assert!(app.show_help);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_hide_help_action() {
+        let file = match File::open("classes/resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
+                app.save_file = false;
+                let _ = apply_action(&mut app, &Action::ShowHelp);
+                let _ = apply_action(&mut app, &Action::HideHelp);
+                assert!(!app.show_help);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
     fn pressing_q_returns_quit_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
