@@ -15,6 +15,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Step 1: Checkout the main repository along with its submodules
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        # Use 'true' to fetch top-level submodules, or 'recursive' if your submodules contain submodules
+        submodules: recursive 
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
