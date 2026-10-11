@@ -831,6 +831,142 @@ mod tests {
     }
 
     #[test]
+    fn apply_death_save_action_back_to_life() {
+        let file = match File::open("classes/resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
+                app.save_file = false;
+                app.char_sheet.health.current_hp = 0;
+                let _ = apply_action(&mut app, &Action::DeathSave);
+                assert_eq!(app.char_sheet.health.death_save_saves, 1);
+                let _ = apply_action(&mut app, &Action::DeathSave);
+                assert_eq!(app.char_sheet.health.death_save_saves, 2);
+                let _ = apply_action(&mut app, &Action::DeathSave);
+                assert_eq!(app.char_sheet.health.death_save_saves, 0);
+                assert_eq!(app.char_sheet.health.current_hp, 1);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_death_fail_action_to_death() {
+        let file = match File::open("classes/resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
+                app.save_file = false;
+                app.char_sheet.health.current_hp = 0;
+                let _ = apply_action(&mut app, &Action::DeathFail);
+                assert_eq!(app.char_sheet.health.death_save_fails, 1);
+                let _ = apply_action(&mut app, &Action::DeathFail);
+                assert_eq!(app.char_sheet.health.death_save_fails, 2);
+                let _ = apply_action(&mut app, &Action::DeathFail);
+                assert_eq!(app.char_sheet.health.death_save_fails, 3);
+                assert_eq!(app.char_sheet.health.current_hp, 0);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_death_save_action_when_alive() {
+        let file = match File::open("classes/resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
+                app.save_file = false;
+                app.char_sheet.health.current_hp = 5;
+                let _ = apply_action(&mut app, &Action::DeathSave);
+                assert_eq!(app.char_sheet.health.death_save_saves, 0);
+                let _ = apply_action(&mut app, &Action::DeathSave);
+                assert_eq!(app.char_sheet.health.death_save_saves, 0);
+                let _ = apply_action(&mut app, &Action::DeathSave);
+                assert_eq!(app.char_sheet.health.death_save_saves, 0);
+                assert_eq!(app.char_sheet.health.current_hp, 5);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
+    fn apply_death_fail_action_when_alive() {
+        let file = match File::open("classes/resources/default_sheet.json") {
+            Ok(file) => file,
+            Err(err) => {
+                eprintln!("Failed to open file: {err}");
+                return;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        match parse_char_sheet(reader) {
+            Ok(character) => {
+                let mut app = App::new(
+                    "classes/resources/default_sheet.json".to_string(),
+                    character,
+                );
+                app.save_file = false;
+                app.char_sheet.health.current_hp = 5;
+                let _ = apply_action(&mut app, &Action::DeathFail);
+                assert_eq!(app.char_sheet.health.death_save_fails, 0);
+                let _ = apply_action(&mut app, &Action::DeathFail);
+                assert_eq!(app.char_sheet.health.death_save_fails, 0);
+                let _ = apply_action(&mut app, &Action::DeathFail);
+                assert_eq!(app.char_sheet.health.death_save_fails, 0);
+                assert_eq!(app.char_sheet.health.current_hp, 5);
+            }
+            Err(err) => {
+                eprintln!("Failed to parse JSON file (it may be malformed): {err}");
+                assert_eq!(false, true);
+            }
+        }
+    }
+
+    #[test]
     fn pressing_q_returns_quit_action() {
         let event = Event::Key(KeyEvent {
             code: KeyCode::Char('q'),
@@ -978,6 +1114,36 @@ mod tests {
         let action = handle_event(event, &mut view_state);
 
         assert!(matches!(action, Action::ToggleTextColor));
+    }
+
+    #[test]
+    fn pressing_s_returns_death_save_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('s'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::DeathSave));
+    }
+
+    #[test]
+    fn pressing_f_returns_death_save_action() {
+        let event = Event::Key(KeyEvent {
+            code: KeyCode::Char('f'),
+            kind: KeyEventKind::Press,
+            modifiers: KeyModifiers::NONE,
+            state: KeyEventState::NONE,
+        });
+
+        let mut view_state = ViewState::default();
+        let action = handle_event(event, &mut view_state);
+
+        assert!(matches!(action, Action::DeathFail));
     }
 
     #[test]
