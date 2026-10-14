@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .and_then(|o| String::from_utf8(o.stdout).ok())
             .map(|s| s.trim().to_string())
             .unwrap_or_else(|| "unknown".to_string());
-        println!("git version:{}", version);
+        println!("char-sheet version {}", version);
         return Ok(());
     }
 
